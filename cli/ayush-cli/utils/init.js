@@ -1,6 +1,6 @@
 import unhandled from 'cli-handle-unhandled';
 import { getPackageJson } from 'get-package-json-file';
-import config from './config.js';
+import { getCredentials, setCredentials } from './config.js';
 import enquirer from 'enquirer';
 import chalkAnimation from 'chalk-animation';
 
@@ -29,11 +29,9 @@ Version: ${pkgJson.version}
 	`);
 
 
-	let username = config.get('username');
-	let password = config.get('password');
-	let ayushSyncAPICode = config.get('ayushSyncAPICode');
+	let { username, password, apiKey } = getCredentials() || {};
 
-	if (!username || !password || !ayushSyncAPICode) {
+	if (!username || !password || !apiKey) {
 		const questions = [
 			{
 				type: 'input',
@@ -47,13 +45,11 @@ Version: ${pkgJson.version}
 			},
 			{
 				type: 'input',
-				name: 'ayushSyncAPICode',
+				name: 'apiKey',
 				message: 'Enter your AyushSync API Code'
 			}
 		];
 		const answers = await enquirer.prompt(questions);
-		config.set('username', answers.username);
-		config.set('password', answers.password);
-		config.set('ayushSyncAPICode', answers.ayushSyncAPICode);
+		setCredentials({ username: answers.username, password: answers.password, apiKey: answers.apiKey });
 	}
 };
