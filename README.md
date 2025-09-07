@@ -67,7 +67,7 @@ Test and demonstrate code search, mapping, and ProblemList entry creation.
 
 ## License
 
-Released under the [Apache 2.0](https://www.apache.org/licenses/LICENSE-2.0) License.
+Released under the [MIT](https://opensource.org/license/mit) License.
 
 ***
 
