@@ -1,7 +1,7 @@
 {
 	"name": "@mayankjha07/ayush-cli",
 	"description": "This Cli uses AyushSync API to connect and App Indian Traditional Medicine and Modern Medicine using FHIR Resources",
-	"version": "0.0.2",
+	"version": "0.0.3",
 	"license": "MIT",
 	"type": "module",
 	"bin": {
