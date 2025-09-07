@@ -14,11 +14,16 @@ const flags = {
 		shortFlag: `d`,
 		desc: `Print debug info`
 	},
-
+	logout: {
+		type: `boolean`,
+		default: false,
+		desc: `Logout from the CLI`
+	}
 };
 
 const commands = {
-	help: { desc: `Print help info` }
+	help: { desc: `Print help info` },
+	chat: { desc: `Chat with Ayush CLI` }
 };
 
 const helpText = meowHelp({
