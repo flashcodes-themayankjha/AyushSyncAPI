@@ -1,23 +1,31 @@
 import unhandled from 'cli-handle-unhandled';
-import welcome from 'cli-welcome';
 import { getPackageJson } from 'get-package-json-file';
 import config from './config.js';
 import enquirer from 'enquirer';
+import chalkAnimation from 'chalk-animation';
+
+const sleep = (ms = 2000) => new Promise(resolve => setTimeout(resolve, ms));
 
 export default async ({ clear = true }) => {
 	unhandled();
 	const pkgJson = await getPackageJson(`./../package.json`);
 
-	welcome({
-		title: `ayush-cli`,
-		tagLine: `A AyushSync API`,
-		description: pkgJson.description,
-		version: pkgJson.version,
-		bgColor: '#A699EA',
-		color: '#000000',
-		bold: true,
-		clear
-	});
+	const rainbow = chalkAnimation.rainbow(`
+   
+    ( A )( Y )( U )( S )( H )(-) ( c )( l )( i )
+ 
+
+	`);
+
+	await sleep();
+	rainbow.stop();
+
+	console.log(`
+A AyushSync API
+${pkgJson.description}
+Version: ${pkgJson.version}
+	`);
+
 
 	let username = config.get('username');
 	let password = config.get('password');
