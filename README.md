@@ -89,5 +89,5 @@ For more information, technical questions, or contribution guidelines, please re
 
 <div style="text-align: center">⁂</div>
 
-[^1]: 25026.pdf
+
 
