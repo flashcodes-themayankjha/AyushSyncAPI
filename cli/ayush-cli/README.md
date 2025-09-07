@@ -5,6 +5,11 @@ chmod 777 index.js
 ```
 
 ## How To use Arguments 
+### Use Help Command to list all Arguments
+
+```bash
+./index.js Help
+```
 
 ```bash
 ./index.js <Arguments>
