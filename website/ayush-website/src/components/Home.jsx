@@ -2,6 +2,8 @@ import React from 'react';
 import Lottie from 'lottie-react';
 import Spot from './Spot';
 import HeroLottie from '../utils/lotties/hero'
+
+
 // Placeholder Lottie animation data. Replace with your actual JSON data.
 const defaultLottieOptions = {
   loop: true,
@@ -100,28 +102,38 @@ const defaultLottieOptions = {
 
 function Home({ scrollPosition }) {
   const heroSpotsData = [
-    { className: "top-10 left-10 w-16 h-16 bg-blue-100", parallaxFactor: 0.05 },
-    { className: "bottom-20 right-20 w-20 h-20 bg-green-100", parallaxFactor: 0.03 },
-    { className: "top-1/3 right-1/4 w-12 h-12 bg-purple-100", parallaxFactor: 0.07 },
+    { className: "top-10 left-10 w-16 h-16 bg-blue-100", parallaxFactor: 0.10 },
+    { className: "bottom-20 right-20 w-20 h-20 bg-green-100", parallaxFactor: 0.06 },
+    { className: "top-1/3 right-1/4 w-12 h-12 bg-purple-100", parallaxFactor: 0.14 },
+    { className: "top-50 left-5 w-14 h-14 bg-yellow-100", parallaxFactor: 0.08 },
+    { className: "bottom-10 left-1/2 w-18 h-18 bg-red-100", parallaxFactor: 0.12 },
+    { className: "top-1/4 right-10 w-10 h-10 bg-teal-100", parallaxFactor: 0.05 },
   ];
+  
 
   const featuresSpotsData = [
-    { className: "top-10 left-10 w-16 h-16 bg-red-100", parallaxFactor: 0.04 },
-    { className: "bottom-20 right-20 w-20 h-20 bg-yellow-100", parallaxFactor: 0.06 },
-    { className: "top-1/2 left-1/2 w-12 h-12 bg-green-100", parallaxFactor: 0.08 },
+    { className: "top-10 left-10 w-16 h-16 bg-red-100", parallaxFactor: 0.08 },
+    { className: "bottom-20 right-20 w-20 h-20 bg-yellow-100", parallaxFactor: 0.12 },
+    { className: "top-1/2 left-1/2 w-12 h-12 bg-green-100", parallaxFactor: 0.16 },
+    { className: "top-1/4 left-1/4 w-10 h-10 bg-blue-100", parallaxFactor: 0.07 },
+    { className: "bottom-1/4 right-1/4 w-18 h-18 bg-purple-100", parallaxFactor: 0.11 },
+    { className: "top-10 right-10 w-14 h-14 bg-orange-100", parallaxFactor: 0.09 },
   ];
 
   const ctaSpotsData = [
-    { className: "top-10 left-10 w-16 h-16 bg-blue-100", parallaxFactor: 0.05 },
-    { className: "bottom-20 right-20 w-20 h-20 bg-green-100", parallaxFactor: 0.03 },
-    { className: "top-1/3 right-1/4 w-12 h-12 bg-purple-100", parallaxFactor: 0.07 },
+    { className: "top-10 left-10 w-16 h-16 bg-blue-100", parallaxFactor: 0.10 },
+    { className: "bottom-20 right-20 w-20 h-20 bg-green-100", parallaxFactor: 0.06 },
+    { className: "top-1/3 right-1/4 w-12 h-12 bg-purple-100", parallaxFactor: 0.14 },
+    { className: "top-1/2 left-10 w-14 h-14 bg-pink-100", parallaxFactor: 0.09 },
+    { className: "bottom-10 right-1/3 w-18 h-18 bg-cyan-100", parallaxFactor: 0.07 },
+    { className: "top-10 right-1/2 w-10 h-10 bg-lime-100", parallaxFactor: 0.12 },
   ];
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center text-gray-800">
+    <>
       {/* Hero Section */}
-      <section className="py-20 px-4 max-w-6xl mx-auto relative overflow-hidden">
-        <div className="flex flex-col md:flex-row items-center justify-between">
+      <section id="hero-section" className="py-20 px-4 max-w-6xl mx-auto relative">
+        <div className="flex flex-col md:flex-row items-center justify-between relative z-10">
           <div className="text-center md:text-left md:w-1/2 mb-10 md:mb-0">
             <h1 className="text-5xl md:text-6xl font-extrabold leading-tight mb-6 text-blue-500">
               AyushSync:
@@ -150,11 +162,11 @@ function Home({ scrollPosition }) {
       </section>
 
       {/* Features Section */}
-      <section className="py-20 px-4 w-full bg-white relative overflow-hidden">
+      <section id="features-section" className="py-20 px-4 w-full bg-white relative">
         <h2 className="text-4xl font-bold text-center mb-12 text-blue-500">
           Why Choose AyushSync?
         </h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-10 max-w-6xl mx-auto">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-10 max-w-6xl mx-auto relative z-10">
           {/* Feature 1 */}
           <div className="bg-white p-8 rounded-lg shadow-md text-center transform transition duration-300 hover:scale-105">
             <div className="text-blue-500 text-5xl mb-4">🌿</div>
@@ -195,7 +207,7 @@ function Home({ scrollPosition }) {
       </section>
 
       {/* Call to Action Section */}
-      <section className="text-center py-20 w-full bg-gray-50 text-gray-800 relative overflow-hidden">
+      <section id="cta-section" className="text-center py-20 w-full bg-gray-50 text-gray-800 relative">
         <h2 className="text-4xl font-bold mb-6 text-blue-500">
           Ready to Begin Your Wellness Journey?
         </h2>
@@ -206,7 +218,7 @@ function Home({ scrollPosition }) {
           Sign Up Now
         </button>
         {/* Lottie Animation for CTA Section */}
-        <div className="mt-8 w-full h-48 flex items-center justify-center">
+        <div className="mt-8 w-full h-48 flex items-center justify-center relative z-10">
           <Lottie animationData={defaultLottieOptions.animationData} loop={defaultLottieOptions.loop} autoplay={defaultLottieOptions.autoplay} style={{ width: '60%', height: '60%' }} />
           {/* Instructions: Replace defaultLottieOptions.animationData with your actual Lottie JSON data. */}
         </div>
@@ -218,7 +230,7 @@ function Home({ scrollPosition }) {
           />
         ))}
       </section>
-    </div>
+    </>
   );
 }
 
