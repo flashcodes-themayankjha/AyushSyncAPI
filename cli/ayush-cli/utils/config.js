@@ -3,17 +3,17 @@ import Conf from 'conf';
 
 const config = new Conf({ projectName: 'ayush-cli' });
 
-export const getCredentials = () => {
-    return config.get('credentials');
+export const getToken = () => {
+    return config.get('token');
 };
 
-export const setCredentials = (credentials) => {
-    config.set('credentials', credentials);
+export const setToken = (token) => {
+    config.set('token', token);
 };
 
-export const clearCredentials = () => {
-    config.delete('credentials');
+export const clearToken = () => {
+    config.delete('token');
 };
 
-export default { getCredentials, setCredentials, clearCredentials };
+export default { getToken, setToken, clearToken };
 
