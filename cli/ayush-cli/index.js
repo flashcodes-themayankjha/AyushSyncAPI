@@ -86,5 +86,47 @@ const sleep = (ms = 2000) => new Promise(resolve => setTimeout(resolve, ms));
             keepChatting = continueChat;
         }
         console.log(logSymbols.info, chalk.yellow('Exiting chat. Goodbye!'));
+    } else if (input.includes('translate')) {
+        if (!isLoggedIn()) {
+            console.log(logSymbols.error, chalk.red('You must be logged in to use the translate feature.'));
+            return;
+        }
+
+        let keepTranslating = true;
+        while (keepTranslating) {
+            const { translationChoice } = await prompt({
+                type: 'select',
+                name: 'translationChoice',
+                message: `${logSymbols.info} ${chalk.blue('Choose a translation option:')}`,
+                choices: [
+                    { name: 'icd11ToNamaste', message: 'ICD-11 to NAMASTE' },
+                    { name: 'namasteToIcd11', message: 'NAMASTE to ICD-11' },
+                    { name: 'quit', message: 'Quit' }
+                ]
+            });
+
+            switch (translationChoice) {
+                case 'icd11ToNamaste':
+                    const { icd11Code } = await prompt({
+                        type: 'input',
+                        name: 'icd11Code',
+                        message: `${logSymbols.info} ${chalk.blue('Enter ICD-11 code:')}`
+                    });
+                    console.log(logSymbols.info, chalk.yellow(`Translating ICD-11 code "${icd11Code}" to NAMASTE (logic not implemented yet).`));
+                    break;
+                case 'namasteToIcd11':
+                    const { namasteCode } = await prompt({
+                        type: 'input',
+                        name: 'namasteCode',
+                        message: `${logSymbols.info} ${chalk.blue('Enter NAMASTE code:')}`
+                    });
+                    console.log(logSymbols.info, chalk.yellow(`Translating NAMASTE code "${namasteCode}" to ICD-11 (logic not implemented yet).`));
+                    break;
+                case 'quit':
+                    keepTranslating = false;
+                    console.log(logSymbols.info, chalk.yellow('Exiting translation. Goodbye!'));
+                    break;
+            }
+        }
     }
 })();

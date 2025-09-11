@@ -40,6 +40,7 @@ const commands = {
 const loggedInCommands = {
     help: { desc: 'Print help info' },
     chat: { desc: 'Chat with Ayush CLI' },
+    translate: { desc: 'Translate ICD-11 to NAMASTE or vice versa' },
     logout: { desc: 'Logout from the CLI' },
 };
 
