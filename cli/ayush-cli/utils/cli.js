@@ -11,6 +11,8 @@ const sleep = (ms = 2000) => new Promise(resolve => setTimeout(resolve, ms));
 const { prompt } = enquirer;
 import open from 'open';
 
+let isTestMode = false; // New variable to track test mode
+
 const flags = {
     clear: {
         type: 'boolean',
@@ -29,6 +31,12 @@ const flags = {
         default: false,
         shortFlag: 'l',
         desc: 'Logout from the CLI'
+    },
+    quit: {
+        type: 'boolean',
+        default: false,
+        shortFlag: 'q',
+        desc: 'Quit the CLI'
     }
 };
 
@@ -91,7 +99,8 @@ export const run = async () => {
             choices: [
                 { name: 'login', message: 'Login' },
                 { name: 'signup', message: 'Sign Up' },
-                { name: 'guest', message: 'Continue as Guest' }
+                { name: 'guest', message: 'Continue as Guest' },
+                { name: 'testMode', message: 'Enter Test Mode (Access all features without login)' }
             ]
         });
 
@@ -109,6 +118,11 @@ export const run = async () => {
             case 'guest':
                 console.log('Most features will be locked.');
                 return null;
+            case 'testMode':
+                isTestMode = true;
+                console.log('Entered Test Mode. All features are accessible.');
+                cli = getCli(true); // In test mode, behave as if logged in for CLI commands
+                break;
         }
     }
 
@@ -125,7 +139,7 @@ export const run = async () => {
         }
     }
 
-    if (cli && cli.input.includes('chat') && !isLoggedIn()) {
+    if (cli && cli.input.includes('chat') && !isLoggedIn() && !isTestMode) {
         console.log('You need to be logged in to use the chat feature.');
         process.exit(0);
     }
@@ -133,3 +147,5 @@ export const run = async () => {
 
     return cli;
 };
+
+export { isTestMode }; // Export isTestMode
