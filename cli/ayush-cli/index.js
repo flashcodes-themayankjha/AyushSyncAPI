@@ -17,18 +17,26 @@ import logSymbols from 'log-symbols';
 import ora from 'ora';
 import Table from 'cli-table3';
 import enquirer from 'enquirer';
+import fs from 'fs';
+import path from 'path';
 const { prompt } = enquirer;
+
+const __dirname = path.resolve();
+const packageJsonPath = path.join(__dirname, 'package.json');
+const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
+const version = packageJson.version;
 
 const sleep = (ms = 2000) => new Promise(resolve => setTimeout(resolve, ms));
 
 async function handleChat() {
     if (!isLoggedIn() && !getTestMode()) {
-        console.log(logSymbols.error, chalk.red.bold('You must be logged in to use the chat feature.'));
+        console.log(boxen(`${logSymbols.error} ${chalk.red.bold('You must be logged in to use the chat feature.')}`, { padding: 2, borderStyle: 'round', borderColor: 'red' }));
         return;
     }
     let keepChatting = true;
     while (keepChatting) {
-        const boxedSymptomsMessage = boxen(`${logSymbols.info} ${chalk.cyan('Enter your symptoms:')}`, { padding: 1, borderStyle: 'round', borderColor: 'cyan' });
+        const boxedSymptomsMessage = `    ${logSymbols.info} ${chalk.cyan('Enter your symptoms:')}`;
+        console.log('');
         console.log(boxedSymptomsMessage);
         const { symptoms } = await prompt({
             type: 'input',
@@ -48,27 +56,32 @@ async function handleChat() {
         await sleep();
         spinner.stop();
 
-        const table = new Table();
+        const table = new Table({
+            head: [chalk.green.bold('Category'), chalk.green.bold('Value')],
+            wordWrap: true,
+            colWidths: [30, 70] // Adjust column widths as needed
+        });
+
         table.push(
-            { [chalk.green.bold('Diagnosis')]: chalk.white('Common Cold') },
-            {
-                [chalk.green.bold('Recommended Treatment')]:
-                    chalk.white('Rest, fluids, and over-the-counter medication.')
-            },
-            { [chalk.green.bold('Datasets Used')]: chalk.white('NAMASTE, WHO TCM2') }
+            ['Diagnosis', 'Common Cold'],
+            ['Recommended Treatment', 'Rest, fluids, and over-the-counter medication.'],
+            ['Datasets Used', 'NAMASTE, WHO TCM2']
         );
 
-        const diagnosis = boxen(table.toString(), {
+        const tableString = table.toString();
+        console.log('DEBUG: Diagnosis Table String:', tableString); // Debug line
+        const diagnosis = boxen(tableString, {
             title: chalk.bold.yellow('Ayush CLI Diagnosis'),
-            padding: 1,
-            margin: 1,
+            padding: 2,
+            margin: 2,
             borderStyle: 'round',
             borderColor: 'magenta'
         });
 
         console.log(diagnosis);
 
-        const boxedContinueChatMessage = boxen(`${logSymbols.info} ${chalk.cyan('Do you want to enter more symptoms?')}`, { padding: 1, borderStyle: 'round', borderColor: 'cyan' });
+        const boxedContinueChatMessage = `    ${logSymbols.info} ${chalk.cyan('Do you want to enter more symptoms?')}`;
+        console.log('');
         console.log(boxedContinueChatMessage);
         const { continueChat } = await prompt({
             type: 'confirm',
@@ -82,14 +95,15 @@ async function handleChat() {
 
 async function handleTranslate() {
     if (!isLoggedIn() && !getTestMode()) {
-        console.log(logSymbols.error, chalk.red.bold('You must be logged in to use the translate feature.'));
+        console.log(boxen(`${logSymbols.error} ${chalk.red.bold('You must be logged in to use the translate feature.')}`, { padding: 2, borderStyle: 'round', borderColor: 'red' }));
         return;
     }
 
     let keepTranslating = true;
     while (keepTranslating) {
-        const boxedTranslationChoiceMessage = boxen(`${logSymbols.info} ${chalk.cyan('Choose a translation or lookup option:')}`, { padding: 1, borderStyle: 'round', borderColor: 'cyan' });
-        console.log(boxedTranslationChoiceMessage);
+        const boxedTranslationChoiceMessage = `    ${logSymbols.info} ${chalk.cyan('Choose a translation or lookup option:')}`;
+        console.log('');
+    console.log(boxedTranslationChoiceMessage);
         const { translationChoice } = await prompt({
             type: 'select',
             name: 'translationChoice',
@@ -116,7 +130,8 @@ async function handleTranslate() {
 
         switch (translationChoice) {
             case 'icd11ToNamaste':
-                const boxedIcd11CodeMessage = boxen(`${logSymbols.info} ${chalk.cyan('Enter ICD-11 code:')}`, { padding: 1, borderStyle: 'round', borderColor: 'cyan' });
+                const boxedIcd11CodeMessage = `    ${logSymbols.info} ${chalk.cyan('Enter ICD-11 code:')}`;
+                console.log('');
                 console.log(boxedIcd11CodeMessage);
                 const { icd11Code } = await prompt({
                     type: 'input',
@@ -129,7 +144,8 @@ async function handleTranslate() {
                 translatedEntry = translateIcd11ToNamaste(icd11Code);
                 break;
             case 'namasteToIcd11':
-                const boxedNamasteCodeMessage = boxen(`${logSymbols.info} ${chalk.cyan('Enter NAMASTE code:')}`, { padding: 1, borderStyle: 'round', borderColor: 'cyan' });
+                const boxedNamasteCodeMessage = `    ${logSymbols.info} ${chalk.cyan('Enter NAMASTE code:')}`;
+                console.log('');
                 console.log(boxedNamasteCodeMessage);
                 const { namasteCode } = await prompt({
                     type: 'input',
@@ -142,7 +158,8 @@ async function handleTranslate() {
                 translatedEntry = translateNamasteToIcd11(namasteCode);
                 break;
             case 'findByNamasteName':
-                const boxedNamasteNameMessage = boxen(`${logSymbols.info} ${chalk.cyan('Enter NAMASTE name:')}`, { padding: 1, borderStyle: 'round', borderColor: 'cyan' });
+                const boxedNamasteNameMessage = `    ${logSymbols.info} ${chalk.cyan('Enter NAMASTE name:')}`;
+                console.log('');
                 console.log(boxedNamasteNameMessage);
                 const { namasteName } = await prompt({
                     type: 'input',
@@ -155,7 +172,8 @@ async function handleTranslate() {
                 translatedEntry = findByNamasteName(namasteName);
                 break;
             case 'findByCondition':
-                const boxedConditionMessage = boxen(`${logSymbols.info} ${chalk.cyan('Enter Condition:')}`, { padding: 1, borderStyle: 'round', borderColor: 'cyan' });
+                const boxedConditionMessage = `    ${logSymbols.info} ${chalk.cyan('Enter Condition:')}`;
+                console.log('');
                 console.log(boxedConditionMessage);
                 const { condition } = await prompt({
                     type: 'input',
@@ -167,7 +185,8 @@ async function handleTranslate() {
                 targetCodeType = 'Condition';
                 const results = findByCondition(condition);
                 if (results.length > 1) {
-                    const boxedSelectedEntryMessage = boxen('Multiple matches found, please select one:', { padding: 1, borderStyle: 'round', borderColor: 'cyan' });
+                    const boxedSelectedEntryMessage = `    Multiple matches found, please select one:`;
+                    console.log('');
                     console.log(boxedSelectedEntryMessage);
                     const { selectedEntry } = await prompt({
                         type: 'select',
@@ -189,8 +208,9 @@ async function handleTranslate() {
             console.log(logSymbols.success, chalk.green.bold(`Translation found for ${sourceCode} to ${targetCodeType}!`));
             let showDetails = true;
             while(showDetails) {
-                const boxedDetailChoiceMessage = boxen(`${logSymbols.info} ${chalk.cyan('What would you like to do next?')}`, { padding: 1, borderStyle: 'round', borderColor: 'cyan' });
-                console.log(boxedDetailChoiceMessage);
+                const boxedDetailChoiceMessage = `    ${logSymbols.info} ${chalk.cyan('What would you like to do next?')}`;
+                console.log('');
+            console.log(boxedDetailChoiceMessage);
                 const { detailChoice } = await prompt({
                     type: 'select',
                     name: 'detailChoice',
@@ -214,8 +234,8 @@ async function handleTranslate() {
                         }
                         console.log(boxen(table.toString(), {
                             title: chalk.bold.yellow('Translation Details'),
-                            padding: 1,
-                            margin: 1,
+                            padding: 2,
+                            margin: 2,
                             borderStyle: 'round',
                             borderColor: 'blue'
                         }));
@@ -223,8 +243,8 @@ async function handleTranslate() {
                     case 'showNamasteName':
                         console.log(boxen(`${chalk.yellow.bold('NAMASTE Name:')} ${chalk.white(translatedEntry['NAMASTE name'])}`, {
                             title: chalk.bold.yellow('NAMASTE Name'),
-                            padding: 1,
-                            margin: 1,
+                            padding: 2,
+                            margin: 2,
                             borderStyle: 'round',
                             borderColor: 'green'
                         }));
@@ -232,8 +252,8 @@ async function handleTranslate() {
                     case 'showCondition':
                         console.log(boxen(`${chalk.yellow.bold('Condition:')} ${chalk.white(translatedEntry['Condition'])}`, {
                             title: chalk.bold.yellow('Condition'),
-                            padding: 1,
-                            margin: 1,
+                            padding: 2,
+                            margin: 2,
                             borderStyle: 'round',
                             borderColor: 'red'
                         }));
@@ -241,8 +261,8 @@ async function handleTranslate() {
                     case 'showDescription':
                         console.log(boxen(`${chalk.yellow.bold('Description:')} ${chalk.white(translatedEntry['Description'])}`, {
                             title: chalk.bold.yellow('Description'),
-                            padding: 1,
-                            margin: 1,
+                            padding: 2,
+                            margin: 2,
                             borderStyle: 'round',
                             borderColor: 'magenta'
                         }));
@@ -257,8 +277,9 @@ async function handleTranslate() {
                 }
             }
         } else {
-            console.log(logSymbols.error, chalk.red.bold(`Translation not found for code: ${sourceCode}.`));
-            const boxedTryAgainMessage = boxen(`${logSymbols.info} ${chalk.cyan('Would you like to try translating another code?')}`, { padding: 1, borderStyle: 'round', borderColor: 'cyan' });
+            console.log(boxen(`${logSymbols.error} ${chalk.red.bold(`Translation not found for code: ${sourceCode.substring(0, 50)}${sourceCode.length > 50 ? '...' : ''}.`)}`, { padding: 1, borderStyle: 'round', borderColor: 'red' }));
+            const boxedTryAgainMessage = `    ${logSymbols.info} ${chalk.cyan('Would you like to try translating another code?')}`;
+            console.log('');
             console.log(boxedTryAgainMessage);
             const { tryAgain } = await prompt({
                 type: 'confirm',
@@ -304,7 +325,9 @@ async function startRepl() {
                 break;
             case 'quit':
                 keepRunning = false;
-                console.log(logSymbols.info, chalk.yellow('Exiting Ayush CLI. Goodbye!'));
+                console.log(''); // Top margin
+                console.log(`    ${logSymbols.info} ${chalk.yellow(`Exiting Ayush CLI v${version}. Goodbye!`)}`);
+                console.log(''); // Bottom margin
                 break;
             case 'clear':
                 console.clear();
@@ -312,7 +335,7 @@ async function startRepl() {
             case '':
                 break;
             default:
-                console.log(logSymbols.error, chalk.red.bold(`Unknown command: ${cmd}. Type "help" for a list of commands.`));
+                console.log(boxen(`${logSymbols.error} ${chalk.red.bold(`Unknown command: ${cmd}. Type "help" for a list of commands.`)}`, { padding: 2, borderStyle: 'round', borderColor: 'red' }));
         }
     }
 }
