@@ -6,10 +6,11 @@
  * @author Mayank-Jha <https://www.linkedin.com/in/mayankkumarjha07/>
  */
 
-import { run, isTestMode } from './utils/cli.js';
+import { run } from './utils/cli.js';
+import { getTestMode, setTestMode } from './utils/testModeManager.js'; // Import setTestMode
 import log from './utils/log.js';
 import { isLoggedIn, logout } from './utils/auth.js';
-import { translateNamasteToIcd11, translateIcd11ToNamaste } from './utils/code-translator.js';
+import { translateNamasteToIcd11, translateIcd11ToNamaste, findByNamasteName, findByCondition } from './utils/code-translator.js';
 import chalk from 'chalk';
 import boxen from 'boxen';
 import logSymbols from 'log-symbols';
@@ -20,19 +21,20 @@ const { prompt } = enquirer;
 
 const sleep = (ms = 2000) => new Promise(resolve => setTimeout(resolve, ms));
 
-(async () => {
-    
+// Manual check for --test-mode or -t flag at the very beginning
+const args = process.argv.slice(2);
+if (args.includes('--test-mode') || args.includes('-t')) {
+    setTestMode(true);
+    console.log('index.js: Test Mode enabled via manual argv check.');
+}
 
+(async () => {
     let shouldQuit = false;
 
     while (!shouldQuit) {
         const cli = await run();
 
         if (!cli) {
-            // This happens if the user chooses 'guest' mode and no command is provided
-            // or if there's an issue with CLI initialization. We should probably exit here
-            // or handle it more gracefully depending on desired behavior for 'guest' mode.
-            // For now, let's assume if cli is null, we should exit.
             shouldQuit = true;
             continue;
         }
@@ -48,7 +50,6 @@ const sleep = (ms = 2000) => new Promise(resolve => setTimeout(resolve, ms));
         if (l) {
             logout();
             console.log(logSymbols.success, chalk.green.bold('You have been logged out.'));
-            // After logout, the CLI should continue running, allowing other commands or re-login
             continue;
         }
 
@@ -63,7 +64,7 @@ const sleep = (ms = 2000) => new Promise(resolve => setTimeout(resolve, ms));
         }
 
         if (input.includes('chat')) {
-            if (!isLoggedIn() && !isTestMode) {
+            if (!isLoggedIn() && !getTestMode()) {
                 console.log(logSymbols.error, chalk.red.bold('You must be logged in to use the chat feature.'));
                 continue;
             }
@@ -78,7 +79,7 @@ const sleep = (ms = 2000) => new Promise(resolve => setTimeout(resolve, ms));
 
                 if (symptoms.toLowerCase() === 'quit') {
                     keepChatting = false;
-                    shouldQuit = true; // Set shouldQuit to true to exit main loop
+                    shouldQuit = true;
                     console.log(logSymbols.info, chalk.yellow('Exiting chat. Goodbye!'));
                     continue;
                 }
@@ -115,12 +116,12 @@ const sleep = (ms = 2000) => new Promise(resolve => setTimeout(resolve, ms));
                     )}`
                 });
                 keepChatting = continueChat;
-                if (!keepChatting) { // If user chooses not to continue chatting
-                    shouldQuit = true; // Set shouldQuit to true to exit main loop
+                if (!keepChatting) {
+                    shouldQuit = true;
                 }
             }
         } else if (input.includes('translate')) {
-            if (!isLoggedIn() && !isTestMode) {
+            if (!isLoggedIn() && !getTestMode()) {
                 console.log(logSymbols.error, chalk.red.bold('You must be logged in to use the translate feature.'));
                 continue;
             }
@@ -130,10 +131,12 @@ const sleep = (ms = 2000) => new Promise(resolve => setTimeout(resolve, ms));
                 const { translationChoice } = await prompt({
                     type: 'select',
                     name: 'translationChoice',
-                    message: `${logSymbols.info} ${chalk.cyan('Choose a translation option:')}`,
+                    message: `${logSymbols.info} ${chalk.cyan('Choose a translation or lookup option:')}`,
                     choices: [
                         { name: 'icd11ToNamaste', message: 'ICD-11 to NAMASTE' },
                         { name: 'namasteToIcd11', message: 'NAMASTE to ICD-11' },
+                        { name: 'findByNamasteName', message: 'Find by NAMASTE name' },
+                        { name: 'findByCondition', message: 'Find by Condition' },
                         { name: 'quit', message: 'Quit' }
                     ]
                 });
@@ -142,11 +145,11 @@ const sleep = (ms = 2000) => new Promise(resolve => setTimeout(resolve, ms));
                 let sourceCode = '';
                 let targetCodeType = '';
 
-                if (translationChoice === 'quit') { // Handle quit choice directly
+                if (translationChoice === 'quit') {
                     keepTranslating = false;
-                    shouldQuit = true; // Set shouldQuit to true to exit main loop
+                    shouldQuit = true;
                     console.log(logSymbols.info, chalk.yellow('Exiting translation. Goodbye!'));
-                    continue; // Continue to re-evaluate while loop condition
+                    continue;
                 }
 
                 switch (translationChoice) {
@@ -171,6 +174,39 @@ const sleep = (ms = 2000) => new Promise(resolve => setTimeout(resolve, ms));
                         sourceCode = namasteCode;
                         targetCodeType = 'ICD-11';
                         translatedEntry = translateNamasteToIcd11(namasteCode);
+                        break;
+                    case 'findByNamasteName':
+                        const { namasteName } = await prompt({
+                            type: 'input',
+                            name: 'namasteName',
+                            message: `${logSymbols.info} ${chalk.cyan('Enter NAMASTE name:')}`,
+                        });
+                        sourceCode = namasteName;
+                        targetCodeType = 'NAMASTE name';
+                        translatedEntry = findByNamasteName(namasteName);
+                        break;
+                    case 'findByCondition':
+                        const { condition } = await prompt({
+                            type: 'input',
+                            name: 'condition',
+                            message: `${logSymbols.info} ${chalk.cyan('Enter Condition:')}`,
+                        });
+                        sourceCode = condition;
+                        targetCodeType = 'Condition';
+                        const results = findByCondition(condition);
+                        if (results.length > 1) {
+                            const { selectedEntry } = await prompt({
+                                type: 'select',
+                                name: 'selectedEntry',
+                                message: 'Multiple matches found, please select one:',
+                                choices: results.map(r => ({ name: r['NAMASTE name'], message: `${r['NAMASTE name']} (${r['Condition']})` }))
+                            });
+                            translatedEntry = results.find(r => r['NAMASTE name'] === selectedEntry);
+                        } else if (results.length === 1) {
+                            translatedEntry = results[0];
+                        } else {
+                            translatedEntry = null;
+                        }
                         break;
                 }
 
@@ -234,12 +270,12 @@ const sleep = (ms = 2000) => new Promise(resolve => setTimeout(resolve, ms));
                                 }));
                                 break;
                             case 'translateAnother':
-                                showDetails = false; // Exit this inner loop to go back to translationChoice
+                                showDetails = false;
                                 break;
                             case 'quitTranslation':
                                 showDetails = false;
                                 keepTranslating = false;
-                                shouldQuit = true; // Set shouldQuit to true to exit main loop
+                                shouldQuit = true;
                                 console.log(logSymbols.info, chalk.yellow('Exiting translation. Goodbye!'));
                                 break;
                         }
@@ -253,7 +289,7 @@ const sleep = (ms = 2000) => new Promise(resolve => setTimeout(resolve, ms));
                     });
                     if (!tryAgain) {
                         keepTranslating = false;
-                        shouldQuit = true; // Set shouldQuit to true to exit main loop
+                        shouldQuit = true;
                         console.log(logSymbols.info, chalk.yellow('Exiting translation. Goodbye!'));
                     }
                 }
