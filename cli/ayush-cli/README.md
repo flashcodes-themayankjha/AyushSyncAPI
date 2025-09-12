@@ -1,4 +1,5 @@
 [![npm version](https://img.shields.io/npm/v/@mayankjha07/ayush-cli.svg)](https://www.npmjs.com/package/@mayankjha07/ayush-cli) [![License: MIT](https://img.shields.io/npm/l/@mayankjha07/ayush-cli.svg)](https://github.com/mayankjha07/AyushSyncAPI/blob/main/LICENSE)
+<img width="866" height="568" alt="image" src="https://github.com/user-attachments/assets/20ed1ca7-7324-41ee-9ece-f32ecd8842b4" />
 
 # Ayush CLI
 
@@ -54,6 +55,7 @@ chmod 777 index.js
 ## Usage
 
 The Ayush CLI can be used with various commands and flags.
+<img width="826" height="698" alt="image" src="https://github.com/user-attachments/assets/188af7bb-4902-4dca-a531-9ce16f7acc6e" />
 
 ### Global Options (Flags)
 
@@ -85,12 +87,16 @@ These commands become available once you are successfully logged in or have enab
 *   `chat`:
     *   **Description:** Starts an interactive session where you can describe your symptoms. The CLI will process your input to provide a diagnosis, suggest recommended treatments, and indicate the medical datasets referenced.
     *   **Usage:** `./index.js chat` or simply `chat` when in REPL mode.
+      <img width="1293" height="1068" alt="image" src="https://github.com/user-attachments/assets/b3a89e9f-29b4-4998-9f50-e143c1291f92" />
+
     *   **Interactive Flow:**
         *   You will be prompted to "Enter your symptoms:".
         *   After processing, a diagnosis (e.g., "Common Cold") and treatment plan will be displayed.
         *   You will then be asked if you wish to "enter more symptoms?".
         *   To exit the chat session, type `quit` when prompted for symptoms.
 *   `translate`:
+  <img width="1393" height="1071" alt="image" src="https://github.com/user-attachments/assets/54de3d81-932b-4b38-9463-362e5985dcd8" />
+
     *   **Description:** Provides a suite of tools for medical code translation and lookup. You can translate between ICD-11 and NAMASTE codes, or search for information using NAMASTE names or medical conditions.
     *   **Usage:** `./index.js translate` or simply `translate` when in REPL mode.
     *   **Interactive Flow:**
