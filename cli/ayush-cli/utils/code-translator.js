@@ -86,3 +86,25 @@ export const translateIcd11ToNamaste = (icd11Code) => {
     const lookupCode = cleanString(icd11Code).toUpperCase(); // Clean and uppercase input
     return icd11CodeMap.get(lookupCode) || null;
 };
+
+export const findByNamasteName = (name) => {
+    const lookupName = cleanString(name).toUpperCase();
+    for (const entry of namasteCodeMap.values()) {
+        if (cleanString(entry['NAMASTE name']).toUpperCase() === lookupName) {
+            return entry;
+        }
+    }
+    return null;
+};
+
+export const findByCondition = (condition) => {
+    const lookupCondition = cleanString(condition).toUpperCase();
+    const results = [];
+    for (const entry of namasteCodeMap.values()) {
+        // Using includes for partial matches on condition
+        if (cleanString(entry['Condition']).toUpperCase().includes(lookupCondition)) {
+            results.push(entry);
+        }
+    }
+    return results;
+};
