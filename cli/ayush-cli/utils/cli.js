@@ -1,9 +1,10 @@
-
+#!/usr/bin/env node
 import meow from 'meow';
 import meowHelp from 'cli-meow-help';
 import unhandled from 'cli-handle-unhandled';
 import { getPackageJson } from 'get-package-json-file';
 import { isLoggedIn, login, logout } from './auth.js';
+import { setTestMode, getTestMode } from './testModeManager.js';
 import enquirer from 'enquirer';
 import chalkAnimation from 'chalk-animation';
 
@@ -11,7 +12,7 @@ const sleep = (ms = 2000) => new Promise(resolve => setTimeout(resolve, ms));
 const { prompt } = enquirer;
 import open from 'open';
 
-let isTestMode = false; // New variable to track test mode
+
 
 const flags = {
     clear: {
@@ -37,6 +38,12 @@ const flags = {
         default: false,
         shortFlag: 'q',
         desc: 'Quit the CLI'
+    },
+    testMode: {
+        type: 'boolean',
+        default: false,
+        shortFlag: 't',
+        desc: 'Enable test mode (access all features without login)'
     }
 };
 
@@ -75,7 +82,7 @@ const getCli = (loggedIn) => {
 export const run = async () => {
     unhandled();
     const pkgJson = await getPackageJson(`./../package.json`);
-    let cli = getCli(isLoggedIn());
+    let cli = getCli(isLoggedIn() || getTestMode());
 
 	const rainbow = chalkAnimation.rainbow(`
 	 █████╗ ██╗   ██╗██╗   ██╗███████╗██╗  ██╗       ██████╗██╗     ██╗
@@ -91,7 +98,7 @@ export const run = async () => {
 
     
 
-    if (!isLoggedIn() && cli.input.length === 0) {
+    if (!isLoggedIn() && !getTestMode() && cli.input.length === 0) {
         const response = await prompt({
             type: 'select',
             name: 'action',
@@ -119,7 +126,7 @@ export const run = async () => {
                 console.log('Most features will be locked.');
                 return null;
             case 'testMode':
-                isTestMode = true;
+                setTestMode(true);
                 console.log('Entered Test Mode. All features are accessible.');
                 cli = getCli(true); // In test mode, behave as if logged in for CLI commands
                 break;
@@ -139,7 +146,7 @@ export const run = async () => {
         }
     }
 
-    if (cli && cli.input.includes('chat') && !isLoggedIn() && !isTestMode) {
+    if (cli && cli.input.includes('chat') && !isLoggedIn() && !getTestMode()) {
         console.log('You need to be logged in to use the chat feature.');
         process.exit(0);
     }
@@ -148,4 +155,4 @@ export const run = async () => {
     return cli;
 };
 
-export { isTestMode }; // Export isTestMode
+
