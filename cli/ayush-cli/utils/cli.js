@@ -4,15 +4,17 @@ import meowHelp from 'cli-meow-help';
 import unhandled from 'cli-handle-unhandled';
 import { getPackageJson } from 'get-package-json-file';
 import { isLoggedIn, login, logout } from './auth.js';
+
 import { setTestMode, getTestMode } from './testModeManager.js';
 import enquirer from 'enquirer';
 import chalkAnimation from 'chalk-animation';
-
-const sleep = (ms = 2000) => new Promise(resolve => setTimeout(resolve, ms));
-const { prompt } = enquirer;
+import boxen from 'boxen';
+import chalk from 'chalk';
 import open from 'open';
 
+const sleep = (ms = 2000) => new Promise(resolve => setTimeout(resolve, ms));
 
+const { prompt } = enquirer;
 
 const flags = {
     clear: {
@@ -50,6 +52,7 @@ const flags = {
 const commands = {
     help: { desc: 'Print help info' },
     login: { desc: 'Login to Ayush CLI' },
+    clear: { desc: 'Clear the console' },
 };
 
 const loggedInCommands = {
@@ -57,13 +60,10 @@ const loggedInCommands = {
     chat: { desc: 'Chat with Ayush CLI' },
     translate: { desc: 'Translate ICD-11 to NAMASTE or vice versa' },
     logout: { desc: 'Logout from the CLI' },
+    clear: { desc: 'Clear the console' },
 };
 
-
-
-
-
-const getCli = (loggedIn) => {
+export const getCli = (loggedIn) => {
     const commonOptions = {
         importMeta: import.meta,
         inferType: true,
@@ -81,10 +81,19 @@ const getCli = (loggedIn) => {
 
 export const run = async () => {
     unhandled();
-    const pkgJson = await getPackageJson(`./../package.json`);
+    
     let cli = getCli(isLoggedIn() || getTestMode());
 
-	const rainbow = chalkAnimation.rainbow(`
+    if (cli.flags.logout) {
+        logout();
+        console.log('Logged out successfully.');
+        return null; // exit
+    }
+
+    // If not logged in, not in test mode, and no command is given, show initial menu.
+    if (!isLoggedIn() && !getTestMode() && cli.input.length === 0) {
+
+        const rainbow = chalkAnimation.rainbow(`
 	 █████╗ ██╗   ██╗██╗   ██╗███████╗██╗  ██╗       ██████╗██╗     ██╗
 	██╔══██╗╚██╗ ██╔╝██║   ██║██╔════╝██║  ██║      ██╔════╝██║     ██║
 	███████║ ╚████╔╝ ██║   ██║███████╗███████║█████╗██║     ██║     ██║
@@ -93,16 +102,33 @@ export const run = async () => {
 	╚═╝  ╚═╝   ╚═╝    ╚═════╝ ╚══════╝╚═╝  ╚═╝       ╚═════╝╚══════╝╚═╝
 	`);
 
-	await sleep();
-	rainbow.stop();
+	    await sleep();
+	    rainbow.stop();
 
-    
+        const pkgJson = await getPackageJson('../package.json');
+        const welcomeMessage = `${chalk.bold('Welcome to Ayush CLI!')}\n\n${chalk.dim(pkgJson.description)}`;
+        const header = boxen(welcomeMessage, {
+            padding: 1,
+            margin: 1,
+            borderStyle: 'round',
+            borderColor: 'green',
+            title: chalk.bold.yellow('Ayush CLI'),
+            titleAlignment: 'center'
+        });
+        console.log(header);
 
-    if (!isLoggedIn() && !getTestMode() && cli.input.length === 0) {
+        const boxedMessage = boxen(chalk.yellow.bold('What would you like to do?'), {
+            padding: 1,
+            borderStyle: 'round',
+            borderColor: 'green'
+        });
+        console.log(boxedMessage);
+
         const response = await prompt({
             type: 'select',
             name: 'action',
-            message: 'What would you like to do?',
+            message: ' ',
+            prefix: ' ',
             choices: [
                 { name: 'login', message: 'Login' },
                 { name: 'signup', message: 'Sign Up' },
@@ -114,45 +140,20 @@ export const run = async () => {
         switch (response.action) {
             case 'login':
                 await login();
-                if(isLoggedIn()){
-                    cli = getCli(true);
-                }
                 break;
             case 'signup':
                 open('https://ayushlink.netlify.app/');
                 console.log('Please sign up on the website and then login.');
-                process.exit(0);
+                return null;
             case 'guest':
                 console.log('Most features will be locked.');
                 return null;
             case 'testMode':
                 setTestMode(true);
                 console.log('Entered Test Mode. All features are accessible.');
-                cli = getCli(true); // In test mode, behave as if logged in for CLI commands
                 break;
         }
     }
-
-    if (cli && (cli.input.includes('logout') || cli.flags.logout)) {
-        logout();
-        console.log('Logged out successfully.');
-        process.exit(0);
-    }
-
-    if (cli && cli.input.includes('login')) {
-        await login();
-        if(isLoggedIn()){
-            cli = getCli(true);
-        }
-    }
-
-    if (cli && cli.input.includes('chat') && !isLoggedIn() && !getTestMode()) {
-        console.log('You need to be logged in to use the chat feature.');
-        process.exit(0);
-    }
-
-
-    return cli;
+    
+    return getCli(isLoggedIn() || getTestMode());
 };
-
-
