@@ -69,8 +69,7 @@ async function handleChat() {
         );
 
         const tableString = table.toString();
-        console.log('DEBUG: Diagnosis Table String:', tableString); // Debug line
-        const diagnosis = boxen(tableString, {
+            const diagnosis = boxen(tableString, {
             title: chalk.bold.yellow('Ayush CLI Diagnosis'),
             padding: 2,
             margin: 2,
@@ -141,7 +140,10 @@ async function handleTranslate() {
                 });
                 sourceCode = icd11Code;
                 targetCodeType = 'NAMASTE';
+                const spinnerIcd11ToNamaste = ora(chalk.magenta('Translating code using local mappings...')).start();
+                await sleep(500); // Added artificial delay
                 translatedEntry = translateIcd11ToNamaste(icd11Code);
+                spinnerIcd11ToNamaste.stop();
                 break;
             case 'namasteToIcd11':
                 const boxedNamasteCodeMessage = `    ${logSymbols.info} ${chalk.cyan('Enter NAMASTE code:')}`;
@@ -155,7 +157,10 @@ async function handleTranslate() {
                 });
                 sourceCode = namasteCode;
                 targetCodeType = 'ICD-11';
+                const spinnerNamasteToIcd11 = ora(chalk.magenta('Translating code using local mappings...')).start();
+                await sleep(500); // Added artificial delay
                 translatedEntry = translateNamasteToIcd11(namasteCode);
+                spinnerNamasteToIcd11.stop();
                 break;
             case 'findByNamasteName':
                 const boxedNamasteNameMessage = `    ${logSymbols.info} ${chalk.cyan('Enter NAMASTE name:')}`;
@@ -169,7 +174,10 @@ async function handleTranslate() {
                 });
                 sourceCode = namasteName;
                 targetCodeType = 'NAMASTE name';
+                const spinnerFindByNamasteName = ora(chalk.magenta('Searching local mappings...')).start();
+                await sleep(500); // Added artificial delay
                 translatedEntry = findByNamasteName(namasteName);
+                spinnerFindByNamasteName.stop();
                 break;
             case 'findByCondition':
                 const boxedConditionMessage = `    ${logSymbols.info} ${chalk.cyan('Enter Condition:')}`;
@@ -183,7 +191,10 @@ async function handleTranslate() {
                 });
                 sourceCode = condition;
                 targetCodeType = 'Condition';
+                const spinnerFindByCondition = ora(chalk.magenta('Searching local mappings...')).start();
+                await sleep(500); // Added artificial delay
                 const results = findByCondition(condition);
+                spinnerFindByCondition.stop();
                 if (results.length > 1) {
                     const boxedSelectedEntryMessage = `    Multiple matches found, please select one:`;
                     console.log('');
