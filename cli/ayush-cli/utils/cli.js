@@ -10,6 +10,7 @@ import enquirer from 'enquirer';
 import chalkAnimation from 'chalk-animation';
 import boxen from 'boxen';
 import chalk from 'chalk';
+import stripAnsi from 'strip-ansi';
 import open from 'open';
 
 const sleep = (ms = 2000) => new Promise(resolve => setTimeout(resolve, ms));
@@ -106,21 +107,28 @@ export const run = async () => {
 	    rainbow.stop();
 
         const pkgJson = await getPackageJson('../package.json');
-        const welcomeMessage = `${chalk.bold('Welcome to Ayush CLI!')}\n\n${chalk.dim(pkgJson.description)}`;
+        const welcomeMessage = `${chalk.blue.bold('Welcome to Ayush CLI!')} ${chalk.magenta.bold(`v${pkgJson.version}`)}
+
+${chalk.dim(pkgJson.description)}`;
         const header = boxen(welcomeMessage, {
             padding: 1,
             margin: 1,
             borderStyle: 'round',
             borderColor: 'green',
             title: chalk.bold.yellow('Ayush CLI'),
-            titleAlignment: 'center'
+            titleAlignment: 'center',
+            width: 80
         });
         console.log(header);
 
         const boxedMessage = boxen(chalk.yellow.bold('What would you like to do?'), {
             padding: 1,
+            margin: 1,
             borderStyle: 'round',
-            borderColor: 'green'
+            borderColor: 'green',
+            title: chalk.bold.yellow('Main Menu'),
+            titleAlignment: 'center',
+            width: 80
         });
         console.log(boxedMessage);
 
