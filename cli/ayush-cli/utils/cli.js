@@ -46,7 +46,7 @@ const flags = {
         type: 'boolean',
         default: false,
         shortFlag: 't',
-        desc: 'Enable test mode (access all features without login)'
+        desc: 'Enable test mode '
     }
 };
 
@@ -121,12 +121,12 @@ ${chalk.dim(pkgJson.description)}`;
         });
         console.log(header);
 
-        const boxedMessage = boxen(chalk.yellow.bold('What would you like to do?'), {
+        const boxedMessage = boxen(chalk.yellow.bold('Login to Continue'), {
             padding: 1,
             margin: 1,
             borderStyle: 'round',
             borderColor: 'green',
-            title: chalk.bold.yellow('Main Menu'),
+            title: chalk.bold.yellow('Authentication'),
             titleAlignment: 'center',
             width: 80
         });
@@ -141,7 +141,7 @@ ${chalk.dim(pkgJson.description)}`;
                 { name: 'login', message: 'Login' },
                 { name: 'signup', message: 'Sign Up' },
                 { name: 'guest', message: 'Continue as Guest' },
-                { name: 'testMode', message: 'Enter Test Mode (Access all features without login)' }
+                { name: 'testMode', message: 'Enter Test Mode ' }
             ]
         });
 
@@ -158,7 +158,28 @@ ${chalk.dim(pkgJson.description)}`;
                 return null;
             case 'testMode':
                 setTestMode(true);
-                console.log('Entered Test Mode. All features are accessible.');
+
+                const modeText = '  ⚙️Tester Mode  ';
+                const coloredModeText = chalk.bgYellow.black(modeText);
+                const visibleLength = stripAnsi(coloredModeText).length;
+                const terminalWidth = process.stdout.columns || 80;
+                const padding = terminalWidth - visibleLength;
+                const paddedText = coloredModeText + ' '.repeat(padding);
+
+                console.log(paddedText);
+
+                // Confirmation Message Box (centered)
+                const confirmationMessage = 'Entered Test Mode. All features are accessible.';
+                const confirmationBox = boxen(chalk.bold(confirmationMessage), {
+                    padding: 2,
+                    margin: { top: 1, bottom: 1 },
+                    borderStyle: 'round',
+                    borderColor: 'green',
+                    title: chalk.bold.yellow('Test Mode Activated'),
+                    titleAlignment: 'center',
+                    width: 80 // Same width as other main boxes
+                });
+                console.log(confirmationBox);
                 break;
         }
     }
