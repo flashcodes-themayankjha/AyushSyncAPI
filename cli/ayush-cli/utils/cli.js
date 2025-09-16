@@ -150,7 +150,7 @@ ${chalk.dim(pkgJson.description)}`;
                 await login();
                 break;
             case 'signup':
-                open('https://ayushlink.netlify.app/');
+                open('https://ayush-sync-web.vercel.app/');
                 console.log('    Please sign up on the website and then login.');
                 return null;
             case 'guest':
