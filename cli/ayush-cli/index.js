@@ -19,9 +19,11 @@ import Table from 'cli-table3';
 import enquirer from 'enquirer';
 import fs from 'fs';
 import path from 'path';
+import { fileURLToPath } from 'url';
 const { prompt } = enquirer;
 
-const __dirname = path.resolve();
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 const packageJsonPath = path.join(__dirname, 'package.json');
 const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
 const version = packageJson.version;
@@ -30,7 +32,7 @@ const sleep = (ms = 2000) => new Promise(resolve => setTimeout(resolve, ms));
 
 async function handleChat() {
     if (!isLoggedIn() && !getTestMode()) {
-        console.log(boxen(`${logSymbols.error} ${chalk.red.bold('You must be logged in to use the chat feature.')}`, { padding: 2, borderStyle: 'round', borderColor: 'red' }));
+        console.log(boxen(`${logSymbols.error} ${chalk.red.bold('You must be logged in to use the chat feature.')}`, { padding: 1, margin: { top: 1, bottom: 1, left: 2, right: 2 }, borderStyle: 'round', borderColor: 'red' }));
         return;
     }
     let keepChatting = true;
@@ -42,13 +44,13 @@ async function handleChat() {
             type: 'input',
             name: 'symptoms',
             message: '>',
-            prefix: ' ',
+            prefix: '  ',
             result: (value) => chalk.white(value)
         });
 
         if (symptoms.toLowerCase() === 'quit') {
             keepChatting = false;
-            console.log(logSymbols.info, chalk.yellow('Exiting chat.'));
+            console.log(`    ${logSymbols.info} ${chalk.yellow('Exiting chat.')}`);
             return;
         }
 
@@ -71,8 +73,8 @@ async function handleChat() {
         const tableString = table.toString();
             const diagnosis = boxen(tableString, {
             title: chalk.bold.yellow('Ayush CLI Diagnosis'),
-            padding: 2,
-            margin: 2,
+            padding: 1,
+            margin: { top: 1, bottom: 1, left: 2, right: 2 },
             borderStyle: 'round',
             borderColor: 'magenta'
         });
@@ -86,7 +88,7 @@ async function handleChat() {
             type: 'confirm',
             name: 'continueChat',
             message: ' ',
-            prefix: ' '
+            prefix: '  '
         });
         keepChatting = continueChat;
     }
@@ -94,7 +96,7 @@ async function handleChat() {
 
 async function handleTranslate() {
     if (!isLoggedIn() && !getTestMode()) {
-        console.log(boxen(`${logSymbols.error} ${chalk.red.bold('You must be logged in to use the translate feature.')}`, { padding: 2, borderStyle: 'round', borderColor: 'red' }));
+        console.log(boxen(`${logSymbols.error} ${chalk.red.bold('You must be logged in to use the translate feature.')}`, { padding: 1, margin: { top: 1, bottom: 1, left: 2, right: 2 }, borderStyle: 'round', borderColor: 'red' }));
         return;
     }
 
@@ -107,7 +109,7 @@ async function handleTranslate() {
             type: 'select',
             name: 'translationChoice',
             message: ' ',
-            prefix: ' ',
+            prefix: '  ',
             choices: [
                 { name: 'icd11ToNamaste', message: 'ICD-11 to NAMASTE' },
                 { name: 'namasteToIcd11', message: 'NAMASTE to ICD-11' },
@@ -119,7 +121,7 @@ async function handleTranslate() {
 
         if (translationChoice === 'quit') {
             keepTranslating = false;
-            console.log(logSymbols.info, chalk.yellow('Exiting translation.'));
+            console.log(`    ${logSymbols.info} ${chalk.yellow('Exiting translation.')}`);
             return;
         }
 
@@ -136,7 +138,7 @@ async function handleTranslate() {
                     type: 'input',
                     name: 'icd11Code',
                     message: '>',
-                    prefix: ' '
+                    prefix: '  '
                 });
                 sourceCode = icd11Code;
                 targetCodeType = 'NAMASTE';
@@ -153,7 +155,7 @@ async function handleTranslate() {
                     type: 'input',
                     name: 'namasteCode',
                     message: '>',
-                    prefix: ' '
+                    prefix: '  '
                 });
                 sourceCode = namasteCode;
                 targetCodeType = 'ICD-11';
@@ -170,7 +172,7 @@ async function handleTranslate() {
                     type: 'input',
                     name: 'namasteName',
                     message: '>',
-                    prefix: ' '
+                    prefix: '  '
                 });
                 sourceCode = namasteName;
                 targetCodeType = 'NAMASTE name';
@@ -187,7 +189,7 @@ async function handleTranslate() {
                     type: 'input',
                     name: 'condition',
                     message: '>',
-                    prefix: ' '
+                    prefix: '  '
                 });
                 sourceCode = condition;
                 targetCodeType = 'Condition';
@@ -203,7 +205,7 @@ async function handleTranslate() {
                         type: 'select',
                         name: 'selectedEntry',
                         message: ' ',
-                        prefix: ' ',
+                        prefix: '  ',
                         choices: results.map(r => ({ name: r['NAMASTE name'], message: `${r['NAMASTE name']} (${r['Condition']})` }))
                     });
                     translatedEntry = results.find(r => r['NAMASTE name'] === selectedEntry);
@@ -216,7 +218,7 @@ async function handleTranslate() {
         }
 
         if (translatedEntry) {
-            console.log(logSymbols.success, chalk.green.bold(`Translation found for ${sourceCode} to ${targetCodeType}!`));
+            console.log(`    ${logSymbols.success} ${chalk.green.bold(`Translation found for ${sourceCode} to ${targetCodeType}!`)}`);
             let showDetails = true;
             while(showDetails) {
                 const boxedDetailChoiceMessage = `    ${logSymbols.info} ${chalk.cyan('What would you like to do next?')}`;
@@ -226,7 +228,7 @@ async function handleTranslate() {
                     type: 'select',
                     name: 'detailChoice',
                     message: ' ',
-                    prefix: ' ',
+                    prefix: '  ',
                     choices: [
                         { name: 'showAll', message: 'Show all details' },
                         { name: 'showNamasteName', message: 'Show NAMASTE Name' },
@@ -245,8 +247,8 @@ async function handleTranslate() {
                         }
                         console.log(boxen(table.toString(), {
                             title: chalk.bold.yellow('Translation Details'),
-                            padding: 2,
-                            margin: 2,
+                            padding: 1,
+                            margin: { top: 1, bottom: 1, left: 2, right: 2 },
                             borderStyle: 'round',
                             borderColor: 'blue'
                         }));
@@ -254,8 +256,8 @@ async function handleTranslate() {
                     case 'showNamasteName':
                         console.log(boxen(`${chalk.yellow.bold('NAMASTE Name:')} ${chalk.white(translatedEntry['NAMASTE name'])}`, {
                             title: chalk.bold.yellow('NAMASTE Name'),
-                            padding: 2,
-                            margin: 2,
+                            padding: 1,
+                            margin: { top: 1, bottom: 1, left: 2, right: 2 },
                             borderStyle: 'round',
                             borderColor: 'green'
                         }));
@@ -263,8 +265,8 @@ async function handleTranslate() {
                     case 'showCondition':
                         console.log(boxen(`${chalk.yellow.bold('Condition:')} ${chalk.white(translatedEntry['Condition'])}`, {
                             title: chalk.bold.yellow('Condition'),
-                            padding: 2,
-                            margin: 2,
+                            padding: 1,
+                            margin: { top: 1, bottom: 1, left: 2, right: 2 },
                             borderStyle: 'round',
                             borderColor: 'red'
                         }));
@@ -272,8 +274,8 @@ async function handleTranslate() {
                     case 'showDescription':
                         console.log(boxen(`${chalk.yellow.bold('Description:')} ${chalk.white(translatedEntry['Description'])}`, {
                             title: chalk.bold.yellow('Description'),
-                            padding: 2,
-                            margin: 2,
+                            padding: 1,
+                            margin: { top: 1, bottom: 1, left: 2, right: 2 },
                             borderStyle: 'round',
                             borderColor: 'magenta'
                         }));
@@ -288,7 +290,7 @@ async function handleTranslate() {
                 }
             }
         } else {
-            console.log(boxen(`${logSymbols.error} ${chalk.red.bold(`Translation not found for code: ${sourceCode.substring(0, 50)}${sourceCode.length > 50 ? '...' : ''}.`)}`, { padding: 1, borderStyle: 'round', borderColor: 'red' }));
+            console.log(boxen(`${logSymbols.error} ${chalk.red.bold(`Translation not found for code: ${sourceCode.substring(0, 50)}${sourceCode.length > 50 ? '...' : ''}.`)}`, { padding: 1, margin: { top: 1, bottom: 1, left: 2, right: 2 }, borderStyle: 'round', borderColor: 'red' }));
             const boxedTryAgainMessage = `    ${logSymbols.info} ${chalk.cyan('Would you like to try translating another code?')}`;
             console.log('');
             console.log(boxedTryAgainMessage);
@@ -296,7 +298,7 @@ async function handleTranslate() {
                 type: 'confirm',
                 name: 'tryAgain',
                 message: ' ',
-                prefix: ' '
+                prefix: '  '
             });
             if (!tryAgain) {
                 keepTranslating = false;
@@ -308,14 +310,15 @@ async function handleTranslate() {
 async function startRepl() {
     const cli = getCli(isLoggedIn() || getTestMode());
 
-    console.log('Type "help" for a list of commands.');
+    console.log('    Type "help" for a list of commands.');
 
     let keepRunning = true;
     while (keepRunning) {
         const { command } = await prompt({
             type: 'input',
             name: 'command',
-            message: '>'
+            message: '>',
+            prefix: '  '
         });
 
         const [cmd, ...args] = command.trim().split(' ');
@@ -328,11 +331,17 @@ async function startRepl() {
                 await handleTranslate();
                 break;
             case 'help':
-                console.log(cli.help);
+                console.log(`    ${cli.help}`);
+                break;
+            case 'login':
+                await login();
+                break;
+            case 'register':
+                await register();
                 break;
             case 'logout':
                 logout();
-                console.log(logSymbols.success, chalk.green.bold('You have been logged out.'));
+                console.log(`    ${logSymbols.success} ${chalk.green.bold('You have been logged out.')}`);
                 break;
             case 'quit':
                 keepRunning = false;
@@ -346,7 +355,7 @@ async function startRepl() {
             case '':
                 break;
             default:
-                console.log(boxen(`${logSymbols.error} ${chalk.red.bold(`Unknown command: ${cmd}. Type "help" for a list of commands.`)}`, { padding: 2, borderStyle: 'round', borderColor: 'red' }));
+                console.log(boxen(`${logSymbols.error} ${chalk.red.bold(`Unknown command: ${cmd}. Type "help" for a list of commands.`)}`, { padding: 1, margin: { top: 1, bottom: 1, left: 2, right: 2 }, borderStyle: 'round', borderColor: 'red' }));
         }
     }
 }
