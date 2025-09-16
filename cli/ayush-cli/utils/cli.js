@@ -87,7 +87,7 @@ export const run = async () => {
 
     if (cli.flags.logout) {
         logout();
-        console.log('Logged out successfully.');
+        console.log('    Logged out successfully.');
         return null; // exit
     }
 
@@ -112,7 +112,7 @@ export const run = async () => {
 ${chalk.dim(pkgJson.description)}`;
         const header = boxen(welcomeMessage, {
             padding: 1,
-            margin: 1,
+            margin: { top: 1, bottom: 1, left: 2, right: 2 },
             borderStyle: 'round',
             borderColor: 'green',
             title: chalk.bold.yellow('Ayush CLI'),
@@ -123,7 +123,7 @@ ${chalk.dim(pkgJson.description)}`;
 
         const boxedMessage = boxen(chalk.yellow.bold('Login to Continue'), {
             padding: 1,
-            margin: 1,
+            margin: { top: 1, bottom: 1, left: 2, right: 2 },
             borderStyle: 'round',
             borderColor: 'green',
             title: chalk.bold.yellow('Authentication'),
@@ -136,7 +136,7 @@ ${chalk.dim(pkgJson.description)}`;
             type: 'select',
             name: 'action',
             message: ' ',
-            prefix: ' ',
+            prefix: '  ',
             choices: [
                 { name: 'login', message: 'Login' },
                 { name: 'signup', message: 'Sign Up' },
@@ -151,10 +151,10 @@ ${chalk.dim(pkgJson.description)}`;
                 break;
             case 'signup':
                 open('https://ayushlink.netlify.app/');
-                console.log('Please sign up on the website and then login.');
+                console.log('    Please sign up on the website and then login.');
                 return null;
             case 'guest':
-                console.log('Most features will be locked.');
+                console.log('    Most features will be locked.');
                 return null;
             case 'testMode':
                 setTestMode(true);
@@ -171,8 +171,8 @@ ${chalk.dim(pkgJson.description)}`;
                 // Confirmation Message Box (centered)
                 const confirmationMessage = 'Entered Test Mode. All features are accessible.';
                 const confirmationBox = boxen(chalk.bold(confirmationMessage), {
-                    padding: 2,
-                    margin: { top: 1, bottom: 1 },
+                    padding: 1,
+                    margin: { top: 1, bottom: 1, left: 2, right: 2 },
                     borderStyle: 'round',
                     borderColor: 'green',
                     title: chalk.bold.yellow('Test Mode Activated'),
