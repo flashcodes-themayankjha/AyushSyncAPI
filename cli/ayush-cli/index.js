@@ -21,6 +21,8 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import open from 'open';
+import { execa } from 'execa';
+import semver from 'semver';
 const { prompt } = enquirer;
 
 const __filename = fileURLToPath(import.meta.url);
@@ -155,6 +157,43 @@ async function openJsonInBrowser(data, filename = 'data') {
             if (err) console.error('Error deleting temporary HTML file:', err);
         });
     }, 5000); // Delete after 5 seconds
+}
+
+async function handleUpgrade() {
+    const spinner = ora(chalk.magenta('Checking for updates...')).start();
+    try {
+        const { stdout: latestVersion } = await execa('npm', ['view', 'ayush-cli', 'version']);
+        spinner.stop();
+
+        if (semver.gt(latestVersion, version)) {
+            console.log(boxen(`${logSymbols.info} ${chalk.blue.bold(`A new version of Ayush CLI (${latestVersion}) is available! Your current version is ${version}.`)}`, { padding: 1, margin: { top: 1, bottom: 1, left: 2, right: 2 }, borderStyle: 'round', borderColor: 'blue' }));
+            const { confirmUpgrade } = await prompt({
+                type: 'confirm',
+                name: 'confirmUpgrade',
+                message: 'Do you want to upgrade now?',
+                initial: true
+            });
+
+            if (confirmUpgrade) {
+                const upgradeSpinner = ora(chalk.magenta('Upgrading Ayush CLI...')).start();
+                try {
+                    await execa('npm', ['install', '-g', 'ayush-cli@latest']);
+                    upgradeSpinner.stop();
+                    console.log(boxen(`${logSymbols.success} ${chalk.green.bold('Ayush CLI upgraded successfully! Please restart the CLI.')}`, { padding: 1, margin: { top: 1, bottom: 1, left: 2, right: 2 }, borderStyle: 'round', borderColor: 'green' }));
+                } catch (upgradeError) {
+                    upgradeSpinner.stop();
+                    console.log(boxen(`${logSymbols.error} ${chalk.red.bold(`Failed to upgrade Ayush CLI: ${upgradeError.message}`)}`, { padding: 1, margin: { top: 1, bottom: 1, left: 2, right: 2 }, borderStyle: 'round', borderColor: 'red' }));
+                }
+            } else {
+                console.log(`    ${logSymbols.info} ${chalk.yellow('Upgrade cancelled.')}`);
+            }
+        } else {
+            console.log(boxen(`${logSymbols.info} ${chalk.blue.bold('You are already running the latest version of Ayush CLI.')}`, { padding: 1, margin: { top: 1, bottom: 1, left: 2, right: 2 }, borderStyle: 'round', borderColor: 'blue' }));
+        }
+    } catch (error) {
+        spinner.stop();
+        console.log(boxen(`${logSymbols.error} ${chalk.red.bold(`Failed to check for updates: ${error.message}`)}`, { padding: 1, margin: { top: 1, bottom: 1, left: 2, right: 2 }, borderStyle: 'round', borderColor: 'red' }));
+    }
 }
 
 async function handleTranslate() {
@@ -476,6 +515,9 @@ async function startRepl() {
                 break;
             case 'clear':
                 console.clear();
+                break;
+            case 'upgrade':
+                await handleUpgrade();
                 break;
             case '':
                 break;

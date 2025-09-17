@@ -54,6 +54,7 @@ const commands = {
     help: { desc: 'Print help info' },
     login: { desc: 'Login to Ayush CLI' },
     clear: { desc: 'Clear the console' },
+    upgrade: { desc: 'Upgrade Ayush CLI to the latest version' },
 };
 
 const loggedInCommands = {
@@ -62,6 +63,7 @@ const loggedInCommands = {
     translate: { desc: 'Translate ICD-11 to NAMASTE or vice versa' },
     logout: { desc: 'Logout from the CLI' },
     clear: { desc: 'Clear the console' },
+    upgrade: { desc: 'Upgrade Ayush CLI to the latest version' },
 };
 
 export const getCli = (loggedIn) => {
@@ -150,7 +152,7 @@ ${chalk.dim(pkgJson.description)}`;
                     await login();
                     break;
                 case 'signup':
-                    open('https://ayush-sync-web.vercel.app/');
+                    open('https://ayushsync.netlify.app/signup');
                     console.log('    Please sign up on the website and then login.');
                     return null;
                 case 'guest':
