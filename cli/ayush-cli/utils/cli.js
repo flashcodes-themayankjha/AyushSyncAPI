@@ -91,16 +91,14 @@ export const run = async () => {
         return null; // exit
     }
 
-    // If not logged in, not in test mode, and no command is given, show initial menu.
-    if (!isLoggedIn() && !getTestMode() && cli.input.length === 0) {
-
+    if (cli.input.length === 0) {
         const rainbow = chalkAnimation.rainbow(`
 	 █████╗ ██╗   ██╗██╗   ██╗███████╗██╗  ██╗       ██████╗██╗     ██╗
 	██╔══██╗╚██╗ ██╔╝██║   ██║██╔════╝██║  ██║      ██╔════╝██║     ██║
 	███████║ ╚████╔╝ ██║   ██║███████╗███████║█████╗██║     ██║     ██║
 	██╔══██║  ╚██╔╝  ██║   ██║╚════██║██╔══██║╚════╝██║     ██║     ██║
 	██║  ██║   ██║   ╚██████╔╝███████║██║  ██║      ╚██████╗███████╗██║
-	╚═╝  ╚═╝   ╚═╝    ╚═════╝ ╚══════╝╚═╝  ╚═╝       ╚═════╝╚══════╝╚═╝
+	╚═╝  ╚═╝   ╚═╝    ╚═════╝ ╚══════╝╚═╝  ╚═╝       ╚══════╝╚══════╝╚═╝
 	`);
 
 	    await sleep();
@@ -121,66 +119,69 @@ ${chalk.dim(pkgJson.description)}`;
         });
         console.log(header);
 
-        const boxedMessage = boxen(chalk.yellow.bold('Login to Continue'), {
-            padding: 1,
-            margin: { top: 1, bottom: 1, left: 2, right: 2 },
-            borderStyle: 'round',
-            borderColor: 'green',
-            title: chalk.bold.yellow('Authentication'),
-            titleAlignment: 'center',
-            width: 80
-        });
-        console.log(boxedMessage);
+        // Only show authentication prompt if not logged in and not in test mode
+        if (!isLoggedIn() && !getTestMode()) {
+            const boxedMessage = boxen(chalk.yellow.bold('Login to Continue'), {
+                padding: 1,
+                margin: { top: 1, bottom: 1, left: 2, right: 2 },
+                borderStyle: 'round',
+                borderColor: 'green',
+                title: chalk.bold.yellow('Authentication'),
+                titleAlignment: 'center',
+                width: 80
+            });
+            console.log(boxedMessage);
 
-        const response = await prompt({
-            type: 'select',
-            name: 'action',
-            message: ' ',
-            prefix: '  ',
-            choices: [
-                { name: 'login', message: 'Login' },
-                { name: 'signup', message: 'Sign Up' },
-                { name: 'guest', message: 'Continue as Guest' },
-                { name: 'testMode', message: 'Enter Test Mode ' }
-            ]
-        });
+            const response = await prompt({
+                type: 'select',
+                name: 'action',
+                message: ' ',
+                prefix: '  ',
+                choices: [
+                    { name: 'login', message: 'Login' },
+                    { name: 'signup', message: 'Sign Up' },
+                    { name: 'guest', message: 'Continue as Guest' },
+                    { name: 'testMode', message: 'Enter Test Mode ' }
+                ]
+            });
 
-        switch (response.action) {
-            case 'login':
-                await login();
-                break;
-            case 'signup':
-                open('https://ayush-sync-web.vercel.app/');
-                console.log('    Please sign up on the website and then login.');
-                return null;
-            case 'guest':
-                console.log('    Most features will be locked.');
-                return null;
-            case 'testMode':
-                setTestMode(true);
+            switch (response.action) {
+                case 'login':
+                    await login();
+                    break;
+                case 'signup':
+                    open('https://ayush-sync-web.vercel.app/');
+                    console.log('    Please sign up on the website and then login.');
+                    return null;
+                case 'guest':
+                    console.log('    Most features will be locked.');
+                    return null;
+                case 'testMode':
+                    setTestMode(true);
 
-                const modeText = '  ⚙️Tester Mode  ';
-                const coloredModeText = chalk.bgYellow.black(modeText);
-                const visibleLength = stripAnsi(coloredModeText).length;
-                const terminalWidth = process.stdout.columns || 80;
-                const padding = terminalWidth - visibleLength;
-                const paddedText = coloredModeText + ' '.repeat(padding);
+                    const modeText = '  ⚙️Tester Mode  ';
+                    const coloredModeText = chalk.bgYellow.black(modeText);
+                    const visibleLength = stripAnsi(coloredModeText).length;
+                    const terminalWidth = process.stdout.columns || 80;
+                    const padding = terminalWidth - visibleLength;
+                    const paddedText = coloredModeText + ' '.repeat(padding);
 
-                console.log(paddedText);
+                    console.log(paddedText);
 
-                // Confirmation Message Box (centered)
-                const confirmationMessage = 'Entered Test Mode. All features are accessible.';
-                const confirmationBox = boxen(chalk.bold(confirmationMessage), {
-                    padding: 1,
-                    margin: { top: 1, bottom: 1, left: 2, right: 2 },
-                    borderStyle: 'round',
-                    borderColor: 'green',
-                    title: chalk.bold.yellow('Test Mode Activated'),
-                    titleAlignment: 'center',
-                    width: 80 // Same width as other main boxes
-                });
-                console.log(confirmationBox);
-                break;
+                    // Confirmation Message Box (centered)
+                    const confirmationMessage = 'Entered Test Mode. All features are accessible.';
+                    const confirmationBox = boxen(chalk.bold(confirmationMessage), {
+                        padding: 1,
+                        margin: { top: 1, bottom: 1, left: 2, right: 2 },
+                        borderStyle: 'round',
+                        borderColor: 'green',
+                        title: chalk.bold.yellow('Test Mode Activated'),
+                        titleAlignment: 'center',
+                        width: 80 // Same width as other main boxes
+                    });
+                    console.log(confirmationBox);
+                    break;
+            }
         }
     }
     

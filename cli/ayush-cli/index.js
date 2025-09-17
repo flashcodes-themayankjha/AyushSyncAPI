@@ -10,7 +10,7 @@ import { run, getCli } from './utils/cli.js';
 import { getTestMode, setTestMode } from './utils/testModeManager.js';
 import log from './utils/log.js';
 import { isLoggedIn, logout } from './utils/auth.js';
-import { translateNamasteToIcd11, translateIcd11ToNamaste, findByNamasteName, findByCondition } from './utils/code-translator.js';
+import { translateTraditionalToIcd, translateIcdToTraditional, getAllConceptMaps, lookupCode, getTestMessage, getCodeSystemsOverview, getFhirCodeSystems, getFhirCodeSystemById, getDbTest, getHealthCheck } from './utils/code-translator.js';
 import chalk from 'chalk';
 import boxen from 'boxen';
 import logSymbols from 'log-symbols';
@@ -20,6 +20,7 @@ import enquirer from 'enquirer';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import open from 'open';
 const { prompt } = enquirer;
 
 const __filename = fileURLToPath(import.meta.url);
@@ -94,10 +95,77 @@ async function handleChat() {
     }
 }
 
+async function openJsonInBrowser(data, filename = 'data') {
+    const tempDir = path.join(__dirname, 'temp');
+    if (!fs.existsSync(tempDir)) {
+        fs.mkdirSync(tempDir);
+    }
+
+    const jsFilePath = path.join(tempDir, `${filename}.js`);
+    const htmlFilePath = path.join(tempDir, `${filename}.html`);
+
+    const seen = new WeakSet(); // Define seen here, before its first use
+    fs.writeFileSync(jsFilePath, `export const data = ${JSON.stringify(data, (key, value) => {
+        // Custom replacer to handle circular references for initial stringification
+        if (typeof value === 'object' && value !== null) {
+            if (seen.has(value)) {
+                return; // Circular reference found, discard key
+            }
+            seen.add(value);
+        }
+        return value;
+    }, 2)};`, 'utf8');
+
+    // No need to reset seen for the HTML stringify, as it's a separate stringify call
+
+    const htmlContent = `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${filename} Data</title>
+    <style>
+        body { font-family: monospace; background-color: #1e1e1e; color: #d4d4d4; padding: 20px; }
+        pre { background-color: #2d2d2d; padding: 15px; border-radius: 5px; overflow-x: auto; }
+        h1 { color: #569cd6; }
+    </style>
+</head>
+<body>
+    <h1>${filename} Data</h1>
+    <pre id="json-data"></pre>
+    <script type="module">
+        import { data } from './${filename}.js';
+        document.getElementById('json-data').textContent = JSON.stringify(data, null, 2);
+    </script>
+</body>
+</html>
+    `;
+    fs.writeFileSync(htmlFilePath, htmlContent, 'utf8');
+
+    console.log(boxen(`${logSymbols.info} ${chalk.blue.bold(`Opening ${filename} data in your browser: file://${htmlFilePath}`)}`, { padding: 1, margin: { top: 1, bottom: 1, left: 2, right: 2 }, borderStyle: 'round', borderColor: 'blue' }));
+    await open(htmlFilePath);
+
+    // Clean up temporary files after a short delay
+    setTimeout(() => {
+        fs.unlink(jsFilePath, (err) => {
+            if (err) console.error('Error deleting temporary JS file:', err);
+        });
+        fs.unlink(htmlFilePath, (err) => {
+            if (err) console.error('Error deleting temporary HTML file:', err);
+        });
+    }, 5000); // Delete after 5 seconds
+}
+
 async function handleTranslate() {
     if (!isLoggedIn() && !getTestMode()) {
         console.log(boxen(`${logSymbols.error} ${chalk.red.bold('You must be logged in to use the translate feature.')}`, { padding: 1, margin: { top: 1, bottom: 1, left: 2, right: 2 }, borderStyle: 'round', borderColor: 'red' }));
         return;
+    }
+
+    const testMessage = await getTestMessage();
+    if (testMessage) {
+        console.log(boxen(chalk.green(testMessage), { padding: 1, margin: { top: 1, bottom: 1, left: 2, right: 2 }, borderStyle: 'round', borderColor: 'green' }));
     }
 
     let keepTranslating = true;
@@ -111,10 +179,14 @@ async function handleTranslate() {
             message: ' ',
             prefix: '  ',
             choices: [
-                { name: 'icd11ToNamaste', message: 'ICD-11 to NAMASTE' },
-                { name: 'namasteToIcd11', message: 'NAMASTE to ICD-11' },
-                { name: 'findByNamasteName', message: 'Find by NAMASTE name' },
-                { name: 'findByCondition', message: 'Find by Condition' },
+                { name: 'icdToTraditional', message: 'ICD-11 to Traditional' },
+                { name: 'traditionalToIcd', message: 'Traditional to ICD-11' },
+                { name: 'lookup', message: 'Lookup a code' },
+                { name: 'getCodeSystemsOverview', message: 'Get All CodeSystems Overview' },
+                { name: 'getFhirCodeSystems', message: 'Get All FHIR CodeSystems' },
+                { name: 'getFhirCodeSystemById', message: 'Get FHIR CodeSystem by ID' },
+                { name: 'getDbTest', message: 'Test Database Connection' },
+                { name: 'getHealthCheck', message: 'Health Check' },
                 { name: 'quit', message: 'Quit' }
             ]
         });
@@ -130,7 +202,7 @@ async function handleTranslate() {
         let targetCodeType = '';
 
         switch (translationChoice) {
-            case 'icd11ToNamaste':
+            case 'icdToTraditional':
                 const boxedIcd11CodeMessage = `    ${logSymbols.info} ${chalk.cyan('Enter ICD-11 code:')}`;
                 console.log('');
                 console.log(boxedIcd11CodeMessage);
@@ -141,168 +213,221 @@ async function handleTranslate() {
                     prefix: '  '
                 });
                 sourceCode = icd11Code;
-                targetCodeType = 'NAMASTE';
-                const spinnerIcd11ToNamaste = ora(chalk.magenta('Translating code using local mappings...')).start();
-                await sleep(500); // Added artificial delay
-                translatedEntry = translateIcd11ToNamaste(icd11Code);
+                targetCodeType = 'Traditional';
+                const spinnerIcd11ToNamaste = ora(chalk.magenta('Translating code using Ayush API...')).start();
+                translatedEntry = await translateIcdToTraditional(icd11Code);
                 spinnerIcd11ToNamaste.stop();
                 break;
-            case 'namasteToIcd11':
-                const boxedNamasteCodeMessage = `    ${logSymbols.info} ${chalk.cyan('Enter NAMASTE code:')}`;
+            case 'traditionalToIcd':
+                const boxedNamasteCodeMessage = `    ${logSymbols.info} ${chalk.cyan('Enter Traditional code (e.g., NAMC:AAB-52):')}`;
                 console.log('');
                 console.log(boxedNamasteCodeMessage);
-                const { namasteCode } = await prompt({
+                const { traditionalCode } = await prompt({
                     type: 'input',
-                    name: 'namasteCode',
+                    name: 'traditionalCode',
                     message: '>',
                     prefix: '  '
                 });
-                sourceCode = namasteCode;
+                sourceCode = traditionalCode;
                 targetCodeType = 'ICD-11';
-                const spinnerNamasteToIcd11 = ora(chalk.magenta('Translating code using local mappings...')).start();
-                await sleep(500); // Added artificial delay
-                translatedEntry = translateNamasteToIcd11(namasteCode);
+                const spinnerNamasteToIcd11 = ora(chalk.magenta('Translating code using Ayush API...')).start();
+                translatedEntry = await translateTraditionalToIcd(traditionalCode);
                 spinnerNamasteToIcd11.stop();
                 break;
-            case 'findByNamasteName':
-                const boxedNamasteNameMessage = `    ${logSymbols.info} ${chalk.cyan('Enter NAMASTE name:')}`;
+            case 'lookup':
+                const boxedSystemMessage = `    ${logSymbols.info} ${chalk.cyan('Enter system URL:')}`;
                 console.log('');
-                console.log(boxedNamasteNameMessage);
-                const { namasteName } = await prompt({
+                console.log(boxedSystemMessage);
+                const { system } = await prompt({
                     type: 'input',
-                    name: 'namasteName',
+                    name: 'system',
                     message: '>',
                     prefix: '  '
                 });
-                sourceCode = namasteName;
-                targetCodeType = 'NAMASTE name';
-                const spinnerFindByNamasteName = ora(chalk.magenta('Searching local mappings...')).start();
-                await sleep(500); // Added artificial delay
-                translatedEntry = findByNamasteName(namasteName);
-                spinnerFindByNamasteName.stop();
+                const boxedCodeMessage = `    ${logSymbols.info} ${chalk.cyan('Enter code:')}`;
+                console.log('');
+                console.log(boxedCodeMessage);
+                const { code } = await prompt({
+                    type: 'input',
+                    name: 'code',
+                    message: '>',
+                    prefix: '  '
+                });
+                sourceCode = code;
+                targetCodeType = 'Lookup';
+                const spinnerLookup = ora(chalk.magenta('Looking up code using Ayush API...')).start();
+                translatedEntry = await lookupCode(system, code);
+                spinnerLookup.stop();
                 break;
-            case 'findByCondition':
-                const boxedConditionMessage = `    ${logSymbols.info} ${chalk.cyan('Enter Condition:')}`;
-                console.log('');
-                console.log(boxedConditionMessage);
-                const { condition } = await prompt({
+            case 'getAll':
+                const spinnerGetAll = ora(chalk.magenta('Getting all concept maps using Ayush API...')).start();
+                translatedEntry = await getAllConceptMaps();
+                spinnerGetAll.stop();
+                break;
+            case 'getCodeSystemsOverview':
+                const spinnerCodeSystemsOverview = ora(chalk.magenta('Getting code systems overview...')).start();
+                translatedEntry = await getCodeSystemsOverview();
+                spinnerCodeSystemsOverview.stop();
+                break;
+            case 'getFhirCodeSystems':
+                const spinnerFhirCodeSystems = ora(chalk.magenta('Getting FHIR code systems...')).start();
+                translatedEntry = await getFhirCodeSystems();
+                spinnerFhirCodeSystems.stop();
+                break;
+            case 'getFhirCodeSystemById':
+                const { fhirCodeSystemId } = await prompt({
                     type: 'input',
-                    name: 'condition',
-                    message: '>',
-                    prefix: '  '
+                    name: 'fhirCodeSystemId',
+                    message: 'Enter FHIR CodeSystem ID:'
                 });
-                sourceCode = condition;
-                targetCodeType = 'Condition';
-                const spinnerFindByCondition = ora(chalk.magenta('Searching local mappings...')).start();
-                await sleep(500); // Added artificial delay
-                const results = findByCondition(condition);
-                spinnerFindByCondition.stop();
-                if (results.length > 1) {
-                    const boxedSelectedEntryMessage = `    Multiple matches found, please select one:`;
-                    console.log('');
-                    console.log(boxedSelectedEntryMessage);
-                    const { selectedEntry } = await prompt({
-                        type: 'select',
-                        name: 'selectedEntry',
-                        message: ' ',
-                        prefix: '  ',
-                        choices: results.map(r => ({ name: r['NAMASTE name'], message: `${r['NAMASTE name']} (${r['Condition']})` }))
-                    });
-                    translatedEntry = results.find(r => r['NAMASTE name'] === selectedEntry);
-                } else if (results.length === 1) {
-                    translatedEntry = results[0];
-                } else {
-                    translatedEntry = null;
-                }
+                const spinnerFhirCodeSystemById = ora(chalk.magenta(`Getting FHIR code system by ID ${fhirCodeSystemId}...`)).start();
+                translatedEntry = await getFhirCodeSystemById(fhirCodeSystemId);
+                spinnerFhirCodeSystemById.stop();
+                break;
+            case 'getDbTest':
+                const spinnerDbTest = ora(chalk.magenta('Testing database connection...')).start();
+                translatedEntry = await getDbTest();
+                spinnerDbTest.stop();
+                break;
+            case 'getHealthCheck':
+                const spinnerHealthCheck = ora(chalk.magenta('Running health check...')).start();
+                translatedEntry = await getHealthCheck();
+                spinnerHealthCheck.stop();
                 break;
         }
 
-        if (translatedEntry) {
-            console.log(`    ${logSymbols.success} ${chalk.green.bold(`Translation found for ${sourceCode} to ${targetCodeType}!`)}`);
-            let showDetails = true;
-            while(showDetails) {
-                const boxedDetailChoiceMessage = `    ${logSymbols.info} ${chalk.cyan('What would you like to do next?')}`;
-                console.log('');
-            console.log(boxedDetailChoiceMessage);
-                const { detailChoice } = await prompt({
-                    type: 'select',
-                    name: 'detailChoice',
-                    message: ' ',
-                    prefix: '  ',
-                    choices: [
-                        { name: 'showAll', message: 'Show all details' },
-                        { name: 'showNamasteName', message: 'Show NAMASTE Name' },
-                        { name: 'showCondition', message: 'Show Condition' },
-                        { name: 'showDescription', message: 'Show Description' },
-                        { name: 'translateAnother', message: 'Translate another code' },
-                        { name: 'quitTranslation', message: 'Quit Translation' }
-                    ]
-                });
+        const displayResults = (entry, choice) => {
+            if (!entry || (Array.isArray(entry) && entry.length === 0) || (typeof entry === 'object' && Object.keys(entry).length === 0)) {
+                return false;
+            }
 
-                switch (detailChoice) {
-                    case 'showAll':
-                        const table = new Table();
-                        for (const key in translatedEntry) {
-                            table.push({ [chalk.yellow.bold(key)]: chalk.white(translatedEntry[key]) });
-                        }
-                        console.log(boxen(table.toString(), {
-                            title: chalk.bold.yellow('Translation Details'),
-                            padding: 1,
-                            margin: { top: 1, bottom: 1, left: 2, right: 2 },
-                            borderStyle: 'round',
-                            borderColor: 'blue'
-                        }));
-                        break;
-                    case 'showNamasteName':
-                        console.log(boxen(`${chalk.yellow.bold('NAMASTE Name:')} ${chalk.white(translatedEntry['NAMASTE name'])}`, {
-                            title: chalk.bold.yellow('NAMASTE Name'),
-                            padding: 1,
-                            margin: { top: 1, bottom: 1, left: 2, right: 2 },
-                            borderStyle: 'round',
-                            borderColor: 'green'
-                        }));
-                        break;
-                    case 'showCondition':
-                        console.log(boxen(`${chalk.yellow.bold('Condition:')} ${chalk.white(translatedEntry['Condition'])}`, {
-                            title: chalk.bold.yellow('Condition'),
-                            padding: 1,
-                            margin: { top: 1, bottom: 1, left: 2, right: 2 },
-                            borderStyle: 'round',
-                            borderColor: 'red'
-                        }));
-                        break;
-                    case 'showDescription':
-                        console.log(boxen(`${chalk.yellow.bold('Description:')} ${chalk.white(translatedEntry['Description'])}`, {
-                            title: chalk.bold.yellow('Description'),
-                            padding: 1,
-                            margin: { top: 1, bottom: 1, left: 2, right: 2 },
-                            borderStyle: 'round',
-                            borderColor: 'magenta'
-                        }));
-                        break;
-                    case 'translateAnother':
-                        showDetails = false;
-                        break;
-                    case 'quitTranslation':
-                        showDetails = false;
-                        keepTranslating = false;
-                        break;
+            if (choice === 'getAll') {
+                console.log(`    ${logSymbols.success} ${chalk.green.bold(`Concept Maps found!`)}`);
+                const table = new Table({
+                    head: [chalk.green.bold('ID'), chalk.green.bold('Name'), chalk.green.bold('Description')],
+                    wordWrap: true,
+                });
+                const rows = [];
+                entry.forEach(conceptMap => {
+                    const name = conceptMap.title || conceptMap.name || '';
+                    const description = conceptMap.description || '';
+
+                    if (!name && !description) {
+                        // If name and description are missing, offer to open in browser
+                        openJsonInBrowser(conceptMap, `conceptmap-${conceptMap.id || 'details'}`);
+                        rows.push([
+                            conceptMap.id || '',
+                            '(Details opened in browser)',
+                            ''
+                        ]);
+                    } else {
+                        rows.push([
+                            conceptMap.id || '',
+                            name,
+                            description
+                        ]);
+                    }
+                });
+                const truncatedRows = rows.slice(0, 10);
+                truncatedRows.forEach(row => table.push(row));
+
+                console.log(boxen(table.toString(), {
+                    title: chalk.bold.yellow('Concept Maps Overview'),
+                    padding: 1,
+                    margin: { top: 1, bottom: 1, left: 2, right: 2 },
+                    borderStyle: 'round',
+                    borderColor: 'blue'
+                }));
+                if (rows.length > 10) {
+                    console.log(chalk.yellow.bold(`\n    Showing 10 of ${rows.length} results. Use 'Get FHIR CodeSystem by ID' to view full details.`));
                 }
             }
-        } else {
-            console.log(boxen(`${logSymbols.error} ${chalk.red.bold(`Translation not found for code: ${sourceCode.substring(0, 50)}${sourceCode.length > 50 ? '...' : ''}.`)}`, { padding: 1, margin: { top: 1, bottom: 1, left: 2, right: 2 }, borderStyle: 'round', borderColor: 'red' }));
-            const boxedTryAgainMessage = `    ${logSymbols.info} ${chalk.cyan('Would you like to try translating another code?')}`;
-            console.log('');
-            console.log(boxedTryAgainMessage);
-            const { tryAgain } = await prompt({
-                type: 'confirm',
-                name: 'tryAgain',
-                message: ' ',
-                prefix: '  '
-            });
-            if (!tryAgain) {
-                keepTranslating = false;
+            else if (Array.isArray(entry)) {
+                console.log(`    ${logSymbols.success} ${chalk.green.bold(
+`Translation found for ${sourceCode}!`
+)}`);
+                const table = new Table({
+                    head: [chalk.green.bold('Traditional Code'), chalk.green.bold('Traditional Display'), chalk.green.bold('ICD Code'), chalk.green.bold('System')],
+                    wordWrap: true,
+                });
+                const truncatedEntries = entry.slice(0, 10);
+                truncatedEntries.forEach(e => {
+                    table.push([e.traditionalCode, e.traditionalDisplay, e.icdCode, e.system]);
+                });
+                console.log(boxen(table.toString(), {
+                    title: chalk.bold.yellow('Translation Details'),
+                    padding: 1,
+                    margin: { top: 1, bottom: 1, left: 2, right: 2 },
+                    borderStyle: 'round',
+                    borderColor: 'blue'
+                }));
+                if (entry.length > 10) {
+                    console.log(chalk.yellow.bold(`
+    Showing 10 of ${entry.length} results.`));
+                }
+            } else {
+                console.log(`    ${logSymbols.success} ${chalk.green.bold(
+`Translation found for ${sourceCode}!`
+)}`);
+                const table = new Table({
+                    head: [chalk.green.bold('Key'), chalk.green.bold('Value')],
+                    wordWrap: true,
+                    colWidths: [30, 70]
+                });
+                for (const key in entry) {
+                    if (typeof entry[key] === 'object' && entry[key] !== null) {
+                        table.push([chalk.yellow.bold(key), JSON.stringify(entry[key], null, 2)]);
+                    } else {
+                        table.push([chalk.yellow.bold(key), chalk.white(entry[key])]);
+                    }
+                }
+                console.log(boxen(table.toString(), {
+                    title: chalk.bold.yellow('Details'),
+                    padding: 1,
+                    margin: { top: 1, bottom: 1, left: 2, right: 2 },
+                    borderStyle: 'round',
+                    borderColor: 'blue'
+                }));
             }
+            return true;
+        }
+
+        if (!displayResults(translatedEntry, translationChoice)) {
+            if (translationChoice === 'traditionalToIcd' || translationChoice === 'icdToTraditional') {
+                const csvPath = path.join(__dirname, 'map.csv');
+                if (fs.existsSync(csvPath)) {
+                    const csvData = fs.readFileSync(csvPath, 'utf8');
+                    const rows = csvData.split('\n').slice(1);
+                    const mappings = rows.map(row => {
+                        const [traditional_code, icd_code] = row.split(',');
+                        return { traditional_code, icd_code };
+                    });
+
+                    const foundMapping = mappings.find(m => m.traditional_code === sourceCode || m.icd_code === sourceCode);
+
+                    if (foundMapping) {
+                        displayResults(foundMapping);
+                    } else {
+                        console.log(boxen(`${logSymbols.error} ${chalk.red.bold(`Translation not found for code: ${sourceCode.substring(0, 50)}${sourceCode.length > 50 ? '...' : ''}.`)}`, { padding: 1, margin: { top: 1, bottom: 1, left: 2, right: 2 }, borderStyle: 'round', borderColor: 'red' }));
+                    }
+                } else {
+                    console.log(boxen(`${logSymbols.error} ${chalk.red.bold(`Translation not found for code: ${sourceCode.substring(0, 50)}${sourceCode.length > 50 ? '...' : ''}.`)}`, { padding: 1, margin: { top: 1, bottom: 1, left: 2, right: 2 }, borderStyle: 'round', borderColor: 'red' }));
+                }
+            } else {
+                console.log(boxen(`${logSymbols.error} ${chalk.red.bold(`No results found.`)}`, { padding: 1, margin: { top: 1, bottom: 1, left: 2, right: 2 }, borderStyle: 'round', borderColor: 'red' }));
+            }
+        }
+        const boxedTryAgainMessage = `    ${logSymbols.info} ${chalk.cyan('Would you like to try translating another code?')}`;
+        console.log('');
+        console.log(boxedTryAgainMessage);
+        const { tryAgain } = await prompt({
+            type: 'confirm',
+            name: 'tryAgain',
+            message: ' ',
+            prefix: '  '
+        });
+        if (!tryAgain) {
+            keepTranslating = false;
         }
     }
 }
