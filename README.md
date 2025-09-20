@@ -6,7 +6,7 @@
 
 ## Architecture Diagram
 
-![AyushSync Microservice Architecture](AyushSync_Microservice_Architecture.png)
+![AyushSync Microservice Architecture]('AyushSync_Microservice_Architecture.png')
 
 ***
 
