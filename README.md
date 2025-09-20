@@ -1,12 +1,12 @@
-# AyushBridge
+# AyushSync API
 
-**AyushBridge** is a lightweight, FHIR R4–compliant terminology micro-service for India’s AYUSH and WHO ICD-11 (TM2 \& Biomedicine) clinical vocabularies. It enables Electronic Medical Record (EMR) systems to integrate, search, and map traditional medicine diagnoses (Ayurveda, Siddha, Unani) using NAMASTE codes, and automatically link them with global ICD-11 codes for true dual-coding, analytics, and interoperability.
+**AyushSyncAPI** is a lightweight, FHIR R4–compliant terminology micro-service for India’s AYUSH and WHO ICD-11 (TM2 \& Biomedicine) clinical vocabularies. It enables Electronic Medical Record (EMR) systems to integrate, search, and map traditional medicine diagnoses (Ayurveda, Siddha, Unani) using NAMASTE codes, and automatically link them with global ICD-11 codes for true dual-coding, analytics, and interoperability.
 
 ***
 
 ## Architecture Diagram
 
-![AyushSync Microservice Architecture]('AyushSync_Microservice_Architecture.png')
+![AyushSync Microservice Architecture](ayushsync_microservice_architecture.png)
 
 ***
 
