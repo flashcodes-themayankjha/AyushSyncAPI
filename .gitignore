@@ -1,3 +1,4 @@
+
 # Python
 venv/
 *.pyc
@@ -11,6 +12,7 @@ diagram.py
 AyushSyncAPI.dot
 
 # Sub-repositories
+api/
 auth/
 cli/
 website/
