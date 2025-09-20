@@ -4,6 +4,12 @@
 
 ***
 
+## Architecture Diagram
+
+![AyushSync Microservice Architecture](AyushSync_Microservice_Architecture.png)
+
+***
+
 ## Features
 
 - **FHIR R4 compliant resources** for NAMASTE, ICD-11 TM2 \& Biomedicine codes.
@@ -19,21 +25,48 @@
 ## Why AyushBridge?
 
 - Bridges AYUSH (India’s traditional medicine) and global digital health ecosystems.
-- Enables India's healthcare providers and EMRs to code, analyze, and claim insurance for traditional as well as biomedical conditions—using a single, standards-based service.
+- Enables India’s healthcare providers and EMRs to code, analyze, and claim insurance for traditional as well as biomedical conditions—using a single, standards-based service.
 - Powers analytics, research, and reporting for Ministry of Ayush, insurance, and public health.
 
 ***
 
 ## System Workflow
 
-1. **Code Ingestion**
-Parse the NAMASTE CSV and ingest the AYUSH code system. Fetch ICD-11 TM2 and Biomedicine codes via the WHO API and synchronize the mappings.
+1. **Code Ingestion and Mapping**
+The `ConceptMapping Service`, built with **Spring Boot** and deployed on AWS, is responsible for handling the terminology mapping. It ingests the NAMASTE codes from CSV files and uses the **ICD-11 API** to synchronize and map the codes.
+
 2. **Auto-complete and Translation**
-Use the REST API endpoints to search, look up, and translate between AYUSH (NAMASTE) and ICD-11 codes.
+The REST API endpoints, powered by the `ConceptMapping Service`, allow users to search, look up, and translate between AYUSH (NAMASTE) and ICD-11 codes.
+
 3. **FHIR Bundle Upload**
 Securely upload dual-coded clinical encounters for record-keeping and analytics, following EHR 2016 standards.
+
 4. **Web/CLI Demo Interface**
 Test and demonstrate code search, mapping, and ProblemList entry creation.
+
+***
+
+## AyushAuth Workflow
+
+The AyushAuth service handles user authentication and authorization. It uses a passwordless, OTP-based system for both registration and login. Here's a step-by-step breakdown of the process:
+
+1.  **User Initiates Login/Registration:** The user enters their ABHA ID (Health ID) in the AyushCLI or AyushWebsite.
+2.  **Request to AyushAuth API:** The client sends the ABHA ID to the `/auth/otp/send` endpoint of the AyushAuth API.
+3.  **OTP Generation and Storage:**
+    *   The AyushAuth API generates a random 6-digit One-Time Password (OTP).
+    *   It securely stores the OTP and its expiry time in the `otps` table in the Supabase database, associated with the user's ABHA ID.
+4.  **OTP Delivery via Twilio:** The API sends the generated OTP to the user's registered mobile number via the Twilio SMS API.
+5.  **User Enters OTP:** The user receives the OTP on their mobile device and enters it into the client application.
+6.  **OTP Verification:** The client sends the ABHA ID and the entered OTP to the `/auth/otp/verify` endpoint of the AyushAuth API.
+7.  **JWT Generation:**
+    *   The AyushAuth API verifies the OTP against the value stored in the Supabase database.
+    *   If the OTP is valid and not expired, the API checks if a user with the given ABHA ID already exists in the `users` table.
+    *   If the user doesn't exist, a new user record is created.
+    *   A JSON Web Token (JWT) is generated, containing the user's ID and other relevant claims. The JWT is signed with a secret key.
+8.  **Session Management:** The AyushAuth API returns the JWT to the client. The client stores the JWT securely (e.g., in `localStorage` or a secure cookie) and includes it in the `Authorization` header of subsequent requests to the AyushSync API.
+9.  **Authenticated Requests:** The AyushSync API (acting as a gateway) validates the JWT on each incoming request before proxying the request to the appropriate downstream service (e.g., ConceptMapping Service).
+
+This entire workflow is designed to be secure, scalable, and user-friendly, providing a seamless authentication experience without the need for passwords.
 
 ***
 
@@ -88,6 +121,3 @@ Released under the [MIT](https://opensource.org/license/mit) License.
 For more information, technical questions, or contribution guidelines, please refer to the `/docs` directory or raise an issue in this repository.
 
 <div style="text-align: center">⁂</div>
-
-
-

@@ -1,0 +1,50 @@
+digraph AyushSystem {
+    rankdir=TB;
+    node [shape=box, style=rounded, fontname="Helvetica"];
+
+    // User
+    User [label="Practitioner / User", shape=oval, style=filled, fillcolor=lightgrey];
+
+    // User Interfaces cluster
+    subgraph cluster_ui {
+        label="User Interfaces";
+        style=rounded;
+        color=lightblue;
+        AyushCLI [label="AyushCLI"];
+        AyushWebsite [label="AyushWebsite (React)"];
+    }
+
+    // AyushSync API
+    AyushSyncAPI [label="AyushSync API (Microservice)", shape=box3d, style=filled, fillcolor=lightyellow];
+
+    // Auth Service cluster
+    subgraph cluster_auth {
+        label="AyushAuth Service";
+        style=rounded;
+        color=lightpink;
+        AuthAPI [label="AyushAuth API (FastAPI)"];
+        SupabaseDB [label="Supabase DB (PostgreSQL)"];
+        TwilioAPI [label="Twilio SMS API"];
+        AuthAPI -> SupabaseDB;
+        AuthAPI -> TwilioAPI;
+    }
+
+    // ConceptMapping cluster
+    subgraph cluster_concept {
+        label="ConceptMapping Service";
+        style=rounded;
+        color=lightgreen;
+        ConceptAPI [label="ConceptAPI (Mapping Logic)"];
+        DataFiles [label="Data Files (.csv, .xls)"];
+        ConceptAPI -> DataFiles;
+    }
+
+    // Main edges
+    User -> AyushCLI;
+    User -> AyushWebsite;
+    AyushCLI -> AyushSyncAPI;
+    AyushWebsite -> AyushSyncAPI;
+    AyushSyncAPI -> AuthAPI;
+    AyushSyncAPI -> ConceptAPI;
+}
+
