@@ -1,0 +1,17 @@
+
+# Python
+venv/
+*.pyc
+__pycache__/
+
+# OS generated files
+.DS_Store
+
+# Diagram generators
+diagram.py
+AyushSyncAPI.dot
+
+# Sub-repositories
+auth/
+cli/
+website/
